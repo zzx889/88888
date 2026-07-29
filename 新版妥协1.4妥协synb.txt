@@ -39,7 +39,7 @@ for i = 1, #username do
     coloredUsername = coloredUsername .. '<font color="' .. gradientColors[colorIndex] .. '">' .. username:sub(i, i) .. '</font>'
 end
 
--- ==================== 主题注册（移植自夜脚本） ====================
+-- ==================== 主题注册 ====================
 WindUI:AddTheme({
     Name = "BlackGold",
     Background = Color3.fromRGB(8,8,10),
@@ -256,7 +256,7 @@ function createUI()
         MinSize = Vector2.new(560, 350),
         MaxSize = Vector2.new(850, 560),
         Transparent = true,
-        Theme = CurrentTheme, -- 使用保存的主题
+        Theme = CurrentTheme,
         Resizable = true,
         Background = "https://i.ibb.co/KzpGVsQR/153941.png",
         BackgroundImageTransparency = 0.5,
@@ -350,7 +350,7 @@ function createUI()
     local circle = Instance.new("Frame", screenGui); circle.Size = UDim2.new(0,240,0,240); circle.AnchorPoint = Vector2.new(0.5,0.5); circle.Position = UDim2.new(0.5,0,0.5,0); circle.BackgroundTransparency = 1; circle.Visible = false
     Instance.new("UIStroke", circle).Color = Color3.fromRGB(128,0,128); Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
 
-    -- ==================== 瞬移模块（增强版：退出恢复跳跃） ====================
+    -- ==================== 瞬移模块（增强版） ====================
     local function EnableTPUI()
         if TP_Loaded then if TP_Module.Gui then TP_Module.Gui.Enabled = true end; return end
         TP_Loaded = true
@@ -369,7 +369,6 @@ function createUI()
             if char then Root = char:FindFirstChild("HumanoidRootPart"); Hum = char:FindFirstChildOfClass("Humanoid") end
             UnlockChar()
             if Root and Root.Parent then Root.Anchored = false end
-            -- 恢复跳跃状态（移植自夜脚本）
             if Hum then
                 pcall(function()
                     Hum.PlatformStand = false
@@ -429,10 +428,8 @@ function createUI()
     local function StopFlingLoop() FlingLoop = false end
     LocalPlayer.CharacterAdded:Connect(function(char) if SpinEnabled then task.wait(0.5); StartSpin() end end)
 
-    -- ==================== 自瞄完整系统（增强版：穿透透明物、切换延迟、白名单过滤） ====================
+    -- ==================== 自瞄系统（增强版） ====================
     local function GetAimPart(char) if not char then return nil end; return char:FindFirstChild(AimPart) or char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart") end
-
-    -- 增强的 isVisible：穿透透明物体（移植自夜脚本）
     local VisibilityCache = {}
     local function isVisible(p, part)
         if not Camera then return false end
@@ -443,13 +440,7 @@ function createUI()
         rayParams.IgnoreWater = true
         local ignoreList = {LocalPlayer.Character, Camera}
         rayParams.FilterDescendantsInstances = ignoreList
-        local offsets = {
-            Vector3.new(0,0,0),
-            Vector3.new(0.25,0,0),
-            Vector3.new(-0.25,0,0),
-            Vector3.new(0,0.25,0),
-            Vector3.new(0,-0.25,0),
-        }
+        local offsets = {Vector3.new(0,0,0), Vector3.new(0.25,0,0), Vector3.new(-0.25,0,0), Vector3.new(0,0.25,0), Vector3.new(0,-0.25,0)}
         local visibleCount = 0
         for _, offset in ipairs(offsets) do
             local targetPos = part.Position + offset
@@ -459,150 +450,80 @@ function createUI()
             local hitCharacter = false
             for i = 1, 3 do
                 local result = workspace:Raycast(currentOrigin, remaining, rayParams)
-                if not result then
-                    hitCharacter = true
-                    break
-                end
+                if not result then hitCharacter = true break end
                 local hit = result.Instance
-                if hit and hit:IsDescendantOf(p.Character) then
-                    hitCharacter = true
-                    break
-                end
-                -- 穿透透明 / 非碰撞 / 玻璃 / 瞄具
-                if hit and (
-                    hit.Transparency > 0.4
-                    or hit.CanCollide == false
-                    or hit.Material == Enum.Material.Glass
-                    or hit.Name:lower():find("scope")
-                    or hit.Name:lower():find("view")
-                ) then
+                if hit and hit:IsDescendantOf(p.Character) then hitCharacter = true break end
+                if hit and (hit.Transparency > 0.4 or hit.CanCollide == false or hit.Material == Enum.Material.Glass or hit.Name:lower():find("scope") or hit.Name:lower():find("view")) then
                     currentOrigin = result.Position + (remaining.Unit * 0.1)
                     remaining = (part.Position - currentOrigin)
-                else
-                    break
-                end
+                else break end
             end
-            if hitCharacter then
-                visibleCount = visibleCount + 1
-            end
+            if hitCharacter then visibleCount = visibleCount + 1 end
         end
         local isNowVisible = visibleCount >= 2
         local last = VisibilityCache[p]
-        if last == nil then
-            VisibilityCache[p] = isNowVisible
-            return isNowVisible
-        end
-        if isNowVisible ~= last then
-            VisibilityCache[p] = last
-            task.delay(0.03, function() VisibilityCache[p] = isNowVisible end)
-            return last
-        end
-        VisibilityCache[p] = isNowVisible
-        return isNowVisible
+        if last == nil then VisibilityCache[p] = isNowVisible return isNowVisible end
+        if isNowVisible ~= last then VisibilityCache[p] = last task.delay(0.03, function() VisibilityCache[p] = isNowVisible end) return last end
+        VisibilityCache[p] = isNowVisible return isNowVisible
     end
-
-    local function isAlive(p)
-        local c = p.Character
-        local h = c and c:FindFirstChild("Humanoid")
-        return h and h.Health > 0
-    end
-
+    local function isAlive(p) local c = p.Character; local h = c and c:FindFirstChild("Humanoid"); return h and h.Health > 0 end
     local CurrentTarget = nil
     local LastSwitchTime = 0
     local SWITCH_DELAY = 0.25
     local SWITCH_THRESHOLD = 0.7
-
     local function shouldForceSwitch(target)
         if not target then return true end
         if not isAlive(target) then return true end
-        local char = target.Character
-        local part = char and GetAimPart(char)
+        local char = target.Character; local part = char and GetAimPart(char)
         if not part then return true end
         if not isVisible(target, part) then return true end
         local pos, visible = Camera:WorldToViewportPoint(part.Position)
         if not visible then return true end
-        local center = Camera.ViewportSize / 2
-        local dist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
-        if dist > FOV then return true end
-        return false
+        return (Vector2.new(pos.X, pos.Y) - Camera.ViewportSize/2).Magnitude > FOV
     end
-
     local function getTarget()
-        local now = tick()
-        local center = Camera.ViewportSize / 2
-        local bestTarget = nil
-        local bestDist = math.huge
+        local now = tick(); local center = Camera.ViewportSize/2; local bestTarget, bestDist = nil, math.huge
         local candidates = {}
-        if LockTargetEnabled and SelectedTarget then
-            table.insert(candidates, SelectedTarget)
-        else
-            for _, p in ipairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer then
-                    table.insert(candidates, p)
-                end
-            end
-        end
+        if LockTargetEnabled and SelectedTarget then table.insert(candidates, SelectedTarget)
+        else for _, p in ipairs(Players:GetPlayers()) do if p ~= LocalPlayer then table.insert(candidates, p) end end end
         for _, p in ipairs(candidates) do
             if p and isAlive(p) then
-                -- 团队过滤：白名单优先，否则队伍检测
                 if not LockTargetEnabled then
                     if AimbotTeamWhitelistEnabled and next(AimbotTeamWhitelist) ~= nil then
-                        if not p.Team or not AimbotTeamWhitelist[p.Team.Name] then
-                            continue
-                        end
+                        if not p.Team or not AimbotTeamWhitelist[p.Team.Name] then continue end
                     elseif ESP_SETTINGS.TeamCheck then
-                        if p.Team == LocalPlayer.Team then
-                            continue
-                        end
+                        if p.Team == LocalPlayer.Team then continue end
                     end
                 end
-                local char = p.Character
-                local part = char and GetAimPart(char)
+                local char = p.Character; local part = char and GetAimPart(char)
                 if part then
-                    local camPos = Camera.CFrame.Position
-                    local dist3D = (part.Position - camPos).Magnitude
+                    local camPos = Camera.CFrame.Position; local dist3D = (part.Position - camPos).Magnitude
                     if dist3D > MaxDistance then continue end
                     if not isVisible(p, part) then continue end
                     local pos, visible = Camera:WorldToViewportPoint(part.Position)
                     if not visible then continue end
                     local dist2D = (Vector2.new(pos.X, pos.Y) - center).Magnitude
-                    if dist2D <= FOV and dist2D < bestDist then
-                        bestDist = dist2D
-                        bestTarget = p
-                    end
+                    if dist2D <= FOV and dist2D < bestDist then bestDist = dist2D; bestTarget = p end
                 end
             end
         end
-        -- 强制切换 / 粘滞逻辑
-        if shouldForceSwitch(CurrentTarget) then
-            CurrentTarget = bestTarget
-            LastSwitchTime = now
-            return bestTarget
-        end
+        if shouldForceSwitch(CurrentTarget) then CurrentTarget = bestTarget; LastSwitchTime = now; return bestTarget end
         if bestTarget then
-            if now - LastSwitchTime < SWITCH_DELAY then
-                return CurrentTarget
-            end
+            if now - LastSwitchTime < SWITCH_DELAY then return CurrentTarget end
             if CurrentTarget and CurrentTarget ~= bestTarget then
-                local char = CurrentTarget.Character
-                local part = char and GetAimPart(char)
+                local char = CurrentTarget.Character; local part = char and GetAimPart(char)
                 if part then
                     local pos, visible = Camera:WorldToViewportPoint(part.Position)
                     if visible then
-                        local currentDist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
-                        if bestDist > currentDist * SWITCH_THRESHOLD then
-                            return CurrentTarget
-                        end
+                        local curDist = (Vector2.new(pos.X, pos.Y) - center).Magnitude
+                        if bestDist > curDist * SWITCH_THRESHOLD then return CurrentTarget end
                     end
                 end
             end
-            CurrentTarget = bestTarget
-            LastSwitchTime = now
-            return bestTarget
+            CurrentTarget = bestTarget; LastSwitchTime = now; return bestTarget
         end
         return nil
     end
-
     RunService.RenderStepped:Connect(function()
         if circle then local size = FOV * 2; circle.Size = UDim2.new(0,size,0,size); local shouldShow = ESP_SETTINGS.HighlightEnabled and ShowFOVCircle; if circle.Visible ~= shouldShow then circle.Visible = shouldShow end end
         if not Camera or not ESP_SETTINGS.HighlightEnabled then return end
@@ -613,9 +534,6 @@ function createUI()
             end
         end
     end)
-
-    -- 玩家透视、NPC透视、互动透视、自由视角等保持不变（未修改）
-    -- 以下省略玩家透视、NPC透视等模块（因未作修改，原样保留）
 
     -- 玩家透视
     local function ClearPlayerESP() for _,obj in ipairs(Workspace:GetDescendants()) do if obj.Name == "PlayerESP_Highlight" or obj.Name == "PlayerESP_Info" or obj.Name == "PlayerESP_Box" then obj:Destroy() end end end
@@ -636,7 +554,7 @@ function createUI()
     local function AddNPCESP(model) if not model then return end; if NPCESP.Highlights[model] then return end; if not model:FindFirstChildWhichIsA("Humanoid") then return end; if Players:GetPlayerFromCharacter(model) then return end; local part = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChildWhichIsA("BasePart"); if not part then return end; local hl = Instance.new("Highlight"); hl.Name = "NPCESP"; hl.Adornee = model; hl.FillColor = NPCESP.Color; hl.OutlineColor = Color3.fromRGB(255,255,255); hl.FillTransparency = 0.4; hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Parent = CoreGui; NPCESP.Highlights[model] = hl end
     local function ToggleNPCESP(state) NPCESP.Enabled = state; if state then for _,obj in ipairs(Workspace:GetDescendants()) do if obj:IsA("Model") then AddNPCESP(obj) end end; if not npcConnection then npcConnection = Workspace.DescendantAdded:Connect(function(c) task.delay(0.5, function() if c:IsA("Model") then AddNPCESP(c) end end) end) end else for _,hl in pairs(NPCESP.Highlights) do hl:Destroy() end; NPCESP.Highlights = {}; if npcConnection then npcConnection:Disconnect(); npcConnection = nil end end end
 
-    -- 互动透视（旧/新）
+    -- 互动透视
     local function IsInteractive_Old(obj) return obj and (obj:IsA("ProximityPrompt") or obj:IsA("ClickDetector")) end
     local function ToggleInteractESP(state) InteractESP.Enabled = state; if state then for _,obj in ipairs(Workspace:GetDescendants()) do if IsInteractive_Old(obj) and obj.Parent then pcall(function() local target = obj.Parent; if InteractESP.Highlights[target] then return end; local hl = Instance.new("Highlight", target); hl.Name = "InteractESP"; hl.Adornee = target; hl.FillColor = InteractESP.Color; hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; InteractESP.Highlights[target] = hl end) end end else for _,hl in pairs(InteractESP.Highlights) do hl:Destroy() end; InteractESP.Highlights = {} end end
     local function IsInteractive_New(o) return o and (o:IsA("ProximityPrompt") or o:IsA("ClickDetector")) end
@@ -663,7 +581,7 @@ function createUI()
     local function CheckAdmin(player) if not AdminDetectEnabled or flaggedAdmins[player] then return end; local suspicious = false; pcall(function() for _,g in ipairs(player:GetGroups()) do if g.Rank >= 200 then suspicious = true; break end end end); if suspicious then flaggedAdmins[player] = true; Notify("管理员警告", player.Name, 5) end end
     for _,p in ipairs(Players:GetPlayers()) do task.spawn(function() CheckAdmin(p) end) end; Players.PlayerAdded:Connect(function(p) task.wait(1); CheckAdmin(p) end); task.spawn(function() while true do if AdminDetectEnabled then for _,p in ipairs(Players:GetPlayers()) do CheckAdmin(p) end end; task.wait(2) end end)
 
-    -- 一键清屏（带拖拽按钮，移植自夜脚本）
+    -- 一键清屏（带拖拽）
     local function ToggleClearScreen()
         if clearScreenGui then clearScreenGui:Destroy(); clearScreenGui = nil; return end
         local hidden = false; local stored = {}
@@ -671,55 +589,12 @@ function createUI()
         local btn = Instance.new("TextButton", sg); btn.Size = UDim2.new(0,120,0,30); btn.Position = UDim2.new(1,-130,0,10)
         btn.BackgroundColor3 = Color3.fromRGB(20,20,20); btn.TextColor3 = Color3.new(1,1,1); btn.Text = "Hide ALL UI"
         Instance.new("UICorner", btn)
-        -- 拖拽逻辑
         local dragging, dragInput, startPos, startFramePos
-        btn.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-                dragging = true
-                startPos = input.Position
-                startFramePos = btn.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
-                end)
-            end
-        end)
-        btn.InputChanged:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-                dragInput = input
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if input == dragInput and dragging then
-                local delta = input.Position - startPos
-                btn.Position = UDim2.new(startFramePos.X.Scale, startFramePos.X.Offset + delta.X, startFramePos.Y.Scale, startFramePos.Y.Offset + delta.Y)
-            end
-        end)
-        -- 功能
-        local function Process(container, hide)
-            for _, obj in ipairs(container:GetDescendants()) do
-                if obj:IsA("GuiObject") and not obj:IsDescendantOf(sg) then
-                    if hide then
-                        if not stored[obj] then stored[obj] = obj.Visible end
-                        obj.Visible = false
-                    else
-                        if stored[obj] ~= nil then obj.Visible = stored[obj] end
-                    end
-                end
-            end
-        end
-        btn.MouseButton1Click:Connect(function()
-            hidden = not hidden
-            btn.Text = hidden and "Show ALL UI" or "Hide ALL UI"
-            if hidden then
-                stored = {}
-                Process(LocalPlayer.PlayerGui, true)
-                pcall(function() Process(CoreGui, true) end)
-            else
-                Process(LocalPlayer.PlayerGui, false)
-                pcall(function() Process(CoreGui, false) end)
-                stored = {}
-            end
-        end)
+        btn.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; startPos = input.Position; startFramePos = btn.Position; input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end) end end)
+        btn.InputChanged:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end end)
+        UserInputService.InputChanged:Connect(function(input) if input == dragInput and dragging then local delta = input.Position - startPos; btn.Position = UDim2.new(startFramePos.X.Scale, startFramePos.X.Offset + delta.X, startFramePos.Y.Scale, startFramePos.Y.Offset + delta.Y) end end)
+        local function Process(container, hide) for _, obj in ipairs(container:GetDescendants()) do if obj:IsA("GuiObject") and not obj:IsDescendantOf(sg) then if hide then if not stored[obj] then stored[obj] = obj.Visible end; obj.Visible = false else if stored[obj] ~= nil then obj.Visible = stored[obj] end end end end end
+        btn.MouseButton1Click:Connect(function() hidden = not hidden; btn.Text = hidden and "Show ALL UI" or "Hide ALL UI"; if hidden then stored = {}; Process(LocalPlayer.PlayerGui, true); pcall(function() Process(CoreGui, true) end) else Process(LocalPlayer.PlayerGui, false); pcall(function() Process(CoreGui, false) end); stored = {} end end)
     end
 
     -- 点击传送工具
@@ -730,226 +605,21 @@ function createUI()
     local function AddDevESP(player) if player == LocalPlayer then return end; if not DevESP.Enabled or not DevESP.Targets[player.Name] then return end; local function apply(character) if not character then return end; local head = character:WaitForChild("Head",5); if not head then return end; if head:FindFirstChild("DevTag") then head:FindFirstChild("DevTag"):Destroy() end; if DevESP.Objects[player] then pcall(function() DevESP.Objects[player].Billboard:Destroy() end); DevESP.Objects[player] = nil end; local bb = Instance.new("BillboardGui"); bb.Name = "DevTag"; bb.Adornee = head; bb.Size = UDim2.new(0,140,0,28); bb.StudsOffset = Vector3.new(0,3,0); bb.AlwaysOnTop = true; bb.Parent = head; local bg = Instance.new("Frame", bb); bg.Size = UDim2.new(1,0,1,0); bg.BackgroundTransparency = 0.2; bg.BorderSizePixel = 0; Instance.new("UICorner", bg).CornerRadius = UDim.new(0,8); local gradient = Instance.new("UIGradient", bg); gradient.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0,Color3.fromRGB(255,0,0)), ColorSequenceKeypoint.new(0.2,Color3.fromRGB(255,255,0)), ColorSequenceKeypoint.new(0.4,Color3.fromRGB(0,255,0)), ColorSequenceKeypoint.new(0.6,Color3.fromRGB(0,255,255)), ColorSequenceKeypoint.new(0.8,Color3.fromRGB(0,0,255)), ColorSequenceKeypoint.new(1,Color3.fromRGB(255,0,255)) }); local txt = Instance.new("TextLabel", bg); txt.Size = UDim2.new(1,-10,1,-6); txt.Position = UDim2.new(0,5,0,3); txt.BackgroundTransparency = 1; txt.Text = "创建者妥协"; txt.TextSize = 13; txt.Font = Enum.Font.SourceSansBold; txt.TextStrokeTransparency = 0.4; txt.TextColor3 = Color3.new(1,1,1); DevESP.Objects[player] = { Billboard = bb, Text = txt }; task.spawn(function() while DevESP.Objects[player] and txt.Parent do txt.TextColor3 = RainbowDev(0); task.wait(0.1) end end) end; if player.Character then apply(player.Character) end; player.CharacterAdded:Connect(function(char) task.wait(1); apply(char) end) end
     for _,plr in ipairs(Players:GetPlayers()) do AddDevESP(plr) end; Players.PlayerAdded:Connect(AddDevESP)
 
-    -- ==================== 新功能模块（自动拾取、子弹追踪等保留） ====================
-    local function startPickupLoop()
-        if pickupHeartbeat then pickupHeartbeat:Disconnect() end
-        if not AutoPickupEnabled then return end
-        local lastTick = 0
-        pickupHeartbeat = RunService.Heartbeat:Connect(function()
-            if not AutoPickupEnabled then pickupHeartbeat:Disconnect(); pickupHeartbeat = nil; return end
-            local now = tick()
-            if now - lastTick < 0.5 then return end
-            lastTick = now
-            pcall(function()
-                local char = LocalPlayer.Character
-                if not char then return end
-                local root = char:FindFirstChild("HumanoidRootPart")
-                if not root then return end
-                for _, obj in ipairs(Workspace:GetDescendants()) do
-                    if (obj:IsA("ProximityPrompt") or obj:IsA("ClickDetector")) and obj.Enabled then
-                        local part = obj.Parent
-                        if part and part:IsA("BasePart") then
-                            local dist = (part.Position - root.Position).Magnitude
-                            if dist <= PickupRange then
-                                if obj:IsA("ProximityPrompt") then fireproximityprompt(obj)
-                                elseif obj:IsA("ClickDetector") then fireclickdetector(obj) end
-                            end
-                        end
-                    end
-                end
-            end)
-        end)
-    end
-
-    local function setupBulletTracking()
-        if bulletConnection then bulletConnection:Disconnect() end
-        lastProcessed = {}
-        if not BulletTrackEnabled then return end
-        bulletConnection = Workspace.DescendantAdded:Connect(function(obj)
-            if not BulletTrackEnabled then return end
-            task.wait(0.05)
-            if not obj:IsA("BasePart") then return end
-            if obj.Parent == LocalPlayer.Character then return end
-            if lastProcessed[obj] then return end
-            lastProcessed[obj] = true
-            task.delay(30, function() lastProcessed[obj] = nil end)
-            local bv = obj:FindFirstChildWhichIsA("BodyVelocity") or obj:FindFirstChildWhichIsA("LinearVelocity")
-            if bv then
-                local target = getTarget()
-                if target and target.Character then
-                    local aimPart = GetAimPart(target.Character)
-                    if aimPart then
-                        local dir = (aimPart.Position - obj.Position).Unit
-                        bv.Velocity = dir * BulletSpeed
-                    end
-                end
-            end
-        end)
-    end
-
-    local function refreshLootESP()
-        for _, hl in pairs(LootHighlights) do hl:Destroy() end
-        LootHighlights = {}
-        if not LootESPEnabled then return end
-        local keywords = {}
-        for word in LootKeywords:gmatch("[^,]+") do table.insert(keywords, word:lower():match("^%s*(.-)%s*$")) end
-        for _, obj in ipairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") or obj:IsA("Model") then
-                local name = obj.Name:lower()
-                for _, kw in ipairs(keywords) do
-                    if name:find(kw, 1, true) then
-                        local hl = Instance.new("Highlight")
-                        hl.Adornee = obj
-                        hl.FillColor = Color3.fromRGB(255, 215, 0)
-                        hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        hl.Parent = CoreGui
-                        table.insert(LootHighlights, hl)
-                        break
-                    end
-                end
-            end
-        end
-    end
-
-    local function startAntiAFK()
-        if afkHeartbeat then afkHeartbeat:Disconnect() end
-        if not AntiAFKEnabled then return end
-        local nextMove = 0
-        afkHeartbeat = RunService.Heartbeat:Connect(function()
-            if not AntiAFKEnabled then afkHeartbeat:Disconnect(); afkHeartbeat = nil; return end
-            local now = tick()
-            if now < nextMove then return end
-            nextMove = now + math.random(60, 120)
-            pcall(function()
-                local char = LocalPlayer.Character
-                if char and char:FindFirstChild("Humanoid") then
-                    char.Humanoid:Move(Vector3.new(math.random(-1,1),0,math.random(-1,1)), true)
-                end
-            end)
-        end)
-    end
-
-    -- 自动重生
-    task.spawn(function()
-        LocalPlayer.CharacterAdded:Connect(function(char)
-            char:WaitForChild("Humanoid").Died:Connect(function()
-                if not AutoRespawnEnabled then return end
-                task.wait(2)
-                pcall(function()
-                    local gui = LocalPlayer.PlayerGui:FindFirstChild("ScreenGui")
-                    if gui then
-                        for _, btn in ipairs(gui:GetDescendants()) do
-                            if btn:IsA("TextButton") and btn.Text:lower():find("respawn") then
-                                btn:Invoke()
-                                break
-                            end
-                        end
-                    end
-                    local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
-                    if remotes then
-                        local respawnRemote = remotes:FindFirstChild("Respawn")
-                        if respawnRemote then respawnRemote:FireServer() end
-                    end
-                end)
-            end)
-        end)
-    end)
-
-    -- 虚假消息
-    local function sendFakeMessage(msg)
-        if not FakeChatEnabled then return end
-        pcall(function()
-            local chatRemote = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
-            if chatRemote then
-                local sayMessage = chatRemote:FindFirstChild("SayMessageRequest")
-                if sayMessage then sayMessage:FireServer(msg, "All") return end
-            end
-            game:GetService("Chat"):Chat(LocalPlayer.Character, msg, "All")
-        end)
-    end
-
-    -- 角色变形 (修复版)
-    local function applyMorph()
-        if not MorphEnabled then return end
-        local char = LocalPlayer.Character
-        if not char then return end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if root then root.Size = MorphSize end
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        if hum then hum.HipHeight = MorphSize.Y * 2 end
-    end
+    -- ==================== 新功能模块 ====================
+    local function startPickupLoop() if pickupHeartbeat then pickupHeartbeat:Disconnect() end; if not AutoPickupEnabled then return end; local lastTick = 0; pickupHeartbeat = RunService.Heartbeat:Connect(function() if not AutoPickupEnabled then pickupHeartbeat:Disconnect(); pickupHeartbeat = nil; return end; local now = tick(); if now - lastTick < 0.5 then return end; lastTick = now; pcall(function() local char = LocalPlayer.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end; for _, obj in ipairs(Workspace:GetDescendants()) do if (obj:IsA("ProximityPrompt") or obj:IsA("ClickDetector")) and obj.Enabled then local part = obj.Parent; if part and part:IsA("BasePart") then local dist = (part.Position - root.Position).Magnitude; if dist <= PickupRange then if obj:IsA("ProximityPrompt") then fireproximityprompt(obj) elseif obj:IsA("ClickDetector") then fireclickdetector(obj) end end end end end end) end) end
+    local function setupBulletTracking() if bulletConnection then bulletConnection:Disconnect() end; lastProcessed = {}; if not BulletTrackEnabled then return end; bulletConnection = Workspace.DescendantAdded:Connect(function(obj) if not BulletTrackEnabled then return end; task.wait(0.05); if not obj:IsA("BasePart") then return end; if obj.Parent == LocalPlayer.Character then return end; if lastProcessed[obj] then return end; lastProcessed[obj] = true; task.delay(30, function() lastProcessed[obj] = nil end); local bv = obj:FindFirstChildWhichIsA("BodyVelocity") or obj:FindFirstChildWhichIsA("LinearVelocity"); if bv then local target = getTarget(); if target and target.Character then local aimPart = GetAimPart(target.Character); if aimPart then local dir = (aimPart.Position - obj.Position).Unit; bv.Velocity = dir * BulletSpeed end end end end) end
+    local function refreshLootESP() for _, hl in pairs(LootHighlights) do hl:Destroy() end; LootHighlights = {}; if not LootESPEnabled then return end; local keywords = {}; for word in LootKeywords:gmatch("[^,]+") do table.insert(keywords, word:lower():match("^%s*(.-)%s*$")) end; for _, obj in ipairs(Workspace:GetDescendants()) do if obj:IsA("BasePart") or obj:IsA("Model") then local name = obj.Name:lower(); for _, kw in ipairs(keywords) do if name:find(kw, 1, true) then local hl = Instance.new("Highlight"); hl.Adornee = obj; hl.FillColor = Color3.fromRGB(255, 215, 0); hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Parent = CoreGui; table.insert(LootHighlights, hl); break end end end end end
+    local function startAntiAFK() if afkHeartbeat then afkHeartbeat:Disconnect() end; if not AntiAFKEnabled then return end; local nextMove = 0; afkHeartbeat = RunService.Heartbeat:Connect(function() if not AntiAFKEnabled then afkHeartbeat:Disconnect(); afkHeartbeat = nil; return end; local now = tick(); if now < nextMove then return end; nextMove = now + math.random(60, 120); pcall(function() local char = LocalPlayer.Character; if char and char:FindFirstChild("Humanoid") then char.Humanoid:Move(Vector3.new(math.random(-1,1),0,math.random(-1,1)), true) end end) end) end
+    task.spawn(function() LocalPlayer.CharacterAdded:Connect(function(char) char:WaitForChild("Humanoid").Died:Connect(function() if not AutoRespawnEnabled then return end; task.wait(2); pcall(function() local gui = LocalPlayer.PlayerGui:FindFirstChild("ScreenGui"); if gui then for _, btn in ipairs(gui:GetDescendants()) do if btn:IsA("TextButton") and btn.Text:lower():find("respawn") then btn:Invoke() break end end end; local remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes"); if remotes then local respawnRemote = remotes:FindFirstChild("Respawn"); if respawnRemote then respawnRemote:FireServer() end end end) end) end) end)
+    local function sendFakeMessage(msg) if not FakeChatEnabled then return end; pcall(function() local chatRemote = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents"); if chatRemote then local sayMessage = chatRemote:FindFirstChild("SayMessageRequest"); if sayMessage then sayMessage:FireServer(msg, "All") return end end; game:GetService("Chat"):Chat(LocalPlayer.Character, msg, "All") end) end
+    local function applyMorph() if not MorphEnabled then return end; local char = LocalPlayer.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); if root then root.Size = MorphSize end; local hum = char:FindFirstChildOfClass("Humanoid"); if hum then hum.HipHeight = MorphSize.Y * 2 end end
     LocalPlayer.CharacterAdded:Connect(function() task.wait(0.5); applyMorph() end)
+    local function explodeNearby() local char = LocalPlayer.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); if not root then return end; for _, player in ipairs(Players:GetPlayers()) do if player ~= LocalPlayer and player.Character then local targetRoot = player.Character:FindFirstChild("HumanoidRootPart"); if targetRoot and (targetRoot.Position - root.Position).Magnitude <= 20 then local dir = (targetRoot.Position - root.Position).Unit; targetRoot.AssemblyLinearVelocity = dir * ExplosionPower end end end end
+    local function exportConfig() local config = { Speed = TargetWalkSpeed, Jump = CustomJumpValue, FOV = FOV, ESP = ESP_SETTINGS, PLAYER_ESP = PLAYER_ESP, Spin = SpinSpeed, LootKeywords = LootKeywords, PickupRange = PickupRange, BulletSpeed = BulletSpeed, MorphSize = MorphSize, ExplosionPower = ExplosionPower }; local json = HttpService:JSONEncode(config); if setclipboard then setclipboard(json); Notify("配置已复制到剪贴板", "可发送到其他设备导入", 3) else Notify("导出失败", "剪贴板不可用", 2) end end
+    local function importConfig() if not setclipboard then Notify("导入失败", "剪贴板不可用", 2) return end; local input = getclipboard and getclipboard() or ""; if input == "" then Notify("剪贴板为空", "", 2) return end; pcall(function() local config = HttpService:JSONDecode(input); if config.Speed then TargetWalkSpeed = config.Speed end; if config.Jump then CustomJumpValue = config.Jump end; if config.FOV then FOV = config.FOV end; if config.ESP then ESP_SETTINGS = config.ESP end; if config.PLAYER_ESP then PLAYER_ESP = config.PLAYER_ESP end; if config.Spin then SpinSpeed = config.Spin end; if config.LootKeywords then LootKeywords = config.LootKeywords; refreshLootESP() end; if config.PickupRange then PickupRange = config.PickupRange end; if config.BulletSpeed then BulletSpeed = config.BulletSpeed end; if config.MorphSize then MorphSize = Vector3.new(config.MorphSize.X, config.MorphSize.Y, config.MorphSize.Z); applyMorph() end; if config.ExplosionPower then ExplosionPower = config.ExplosionPower end; Notify("配置导入成功", "已应用所有设置", 3) end) end
+    UserInputService.InputBegan:Connect(function(input, gpe) if gpe then return end; if input.KeyCode == Enum.KeyCode.G then if TP_SelectedPlayer then TeleportToPlayer(TP_SelectedPlayer) end elseif input.KeyCode == Enum.KeyCode.H then ESP_SETTINGS.HighlightEnabled = not ESP_SETTINGS.HighlightEnabled end end)
 
-    -- 爆炸击飞
-    local function explodeNearby()
-        local char = LocalPlayer.Character
-        if not char then return end
-        local root = char:FindFirstChild("HumanoidRootPart")
-        if not root then return end
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local targetRoot = player.Character:FindFirstChild("HumanoidRootPart")
-                if targetRoot and (targetRoot.Position - root.Position).Magnitude <= 20 then
-                    local dir = (targetRoot.Position - root.Position).Unit
-                    targetRoot.AssemblyLinearVelocity = dir * ExplosionPower
-                end
-            end
-        end
-    end
-
-    -- 云端配置
-    local function exportConfig()
-        local config = {
-            Speed = TargetWalkSpeed,
-            Jump = CustomJumpValue,
-            FOV = FOV,
-            ESP = ESP_SETTINGS,
-            PLAYER_ESP = PLAYER_ESP,
-            Spin = SpinSpeed,
-            LootKeywords = LootKeywords,
-            PickupRange = PickupRange,
-            BulletSpeed = BulletSpeed,
-            MorphSize = MorphSize,
-            ExplosionPower = ExplosionPower
-        }
-        local json = HttpService:JSONEncode(config)
-        if setclipboard then setclipboard(json); Notify("配置已复制到剪贴板", "可发送到其他设备导入", 3)
-        else Notify("导出失败", "剪贴板不可用", 2) end
-    end
-    local function importConfig()
-        if not setclipboard then Notify("导入失败", "剪贴板不可用", 2) return end
-        local input = getclipboard and getclipboard() or ""
-        if input == "" then Notify("剪贴板为空", "", 2) return end
-        pcall(function()
-            local config = HttpService:JSONDecode(input)
-            if config.Speed then TargetWalkSpeed = config.Speed end
-            if config.Jump then CustomJumpValue = config.Jump end
-            if config.FOV then FOV = config.FOV end
-            if config.ESP then ESP_SETTINGS = config.ESP end
-            if config.PLAYER_ESP then PLAYER_ESP = config.PLAYER_ESP end
-            if config.Spin then SpinSpeed = config.Spin end
-            if config.LootKeywords then LootKeywords = config.LootKeywords; refreshLootESP() end
-            if config.PickupRange then PickupRange = config.PickupRange end
-            if config.BulletSpeed then BulletSpeed = config.BulletSpeed end
-            if config.MorphSize then MorphSize = Vector3.new(config.MorphSize.X, config.MorphSize.Y, config.MorphSize.Z); applyMorph() end
-            if config.ExplosionPower then ExplosionPower = config.ExplosionPower end
-            Notify("配置导入成功", "已应用所有设置", 3)
-        end)
-    end
-
-    -- 快捷键
-    UserInputService.InputBegan:Connect(function(input, gpe)
-        if gpe then return end
-        if input.KeyCode == Enum.KeyCode.G then
-            if TP_SelectedPlayer then TeleportToPlayer(TP_SelectedPlayer) end
-        elseif input.KeyCode == Enum.KeyCode.H then
-            ESP_SETTINGS.HighlightEnabled = not ESP_SETTINGS.HighlightEnabled
-        end
-    end)
-
-    -- ==================== 以下是分区创建和 UI，将在第二部分发送 ====================
-    -- （由于长度限制，剩余代码请见下一条消息）
-end    -- ==================== 分区创建 ====================
+    -- ==================== 分区创建 ====================
     -- 主页
     local MainTab = Window:Tab({ Title = "主页", Icon = "house" })
     MainTab:Paragraph({
@@ -1498,7 +1168,6 @@ end    -- ==================== 分区创建 ====================
     ConfigTab:Button({ Title = "导出配置", Callback = exportConfig })
     ConfigTab:Button({ Title = "导入配置", Callback = importConfig })
     ConfigTab:Toggle({ Title = "崩溃保护", Default = true, Callback = function(v) CrashProtectionEnabled = v end })
-    -- 主题切换（自定义主题列表）
     local ThemeList = {}
     pcall(function() ThemeList = WindUI:GetThemes() end)
     local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
@@ -1554,7 +1223,7 @@ end    -- ==================== 分区创建 ====================
     FunTab:Slider({ Title = "体型Y", Value = { Min=0.5, Max=5, Default=1 }, Increment=0.1, Callback = function(v) MorphSize = Vector3.new(MorphSize.X, v, MorphSize.Z); applyMorph() end })
     FunTab:Slider({ Title = "体型Z", Value = { Min=0.5, Max=5, Default=1 }, Increment=0.1, Callback = function(v) MorphSize = Vector3.new(MorphSize.X, MorphSize.Y, v); applyMorph() end })
 
-    -- ==================== 流光彩虹边框（移植自夜脚本） ====================
+    -- ==================== 流光彩虹边框 ====================
     task.wait(0.3)
     local Main = Window.UIElements and Window.UIElements.Main
     if Main then
