@@ -51,7 +51,6 @@ WindUI:Popup({
 })
 
 function createUI()
-    -- 局部化所有全局功能变量，避免污染
     local FeatureDisplayEnabled, EnabledFeatures, FeatureItems, FeatureGui, Container, UIList
     local HealthDisplay, HealthGui, HealthPosFile
     local TP_Module, TP_Loaded
@@ -82,7 +81,6 @@ function createUI()
     local currentTrack
     local Translator
 
-    -- 初始化部分变量
     FeatureDisplayEnabled = true; EnabledFeatures = {}; FeatureItems = {}
     HealthPosFile = "NightHealthPos.txt"; HealthDisplay = { Enabled = true, Position = "LeftTop", Label = nil }
     TP_Module = {}; TP_Loaded = false
@@ -129,10 +127,10 @@ function createUI()
     }
 
     local Window = WindUI:CreateWindow({
-        Title = gradient("妥协", Color3.fromHex("#00DBDE"), Color3.fromHex("#FC00FF")),
+        Title = gradient("妥协", Color3.fromHex("#00DBDE"), Color3.fromHex("#FC00FF")),
         Icon = "paint-bucket",
         IconThemed = true,
-        Author = gradient("妥协", Color3.fromHex("#00FF87"), Color3.fromHex("#60EFFF")),
+        Author = gradient("妥协", Color3.fromHex("#00FF87"), Color3.fromHex("#60EFFF")),
         Folder = "妥协hub",
         Size = UDim2.fromOffset(680, 460),
         MinSize = Vector2.new(560, 350),
@@ -144,7 +142,7 @@ function createUI()
         BackgroundImageTransparency = 0.5,
         Search = { Enabled = true, Placeholder = "搜索功能...", Callback = function(t) end },
         User = { Enabled = true, Callback = function()
-            WindUI:Notify({ Title = "玩家信息", Content = "欢迎使用妥协 Hub", Duration = 2, Icon = "user" })
+            WindUI:Notify({ Title = "玩家信息", Content = "欢迎使用妥协 Hub", Duration = 2, Icon = "user" })
         end },
         SideBarWidth = 200,
         CornerRadius = UDim.new(0, 9999),
@@ -691,7 +689,7 @@ function createUI()
     PlayerFuncTab:Slider({ Title = "拾取范围", Value = { Min = 5, Max = 50, Default = 10 }, Increment = 1, Callback = function(v) PickupRange = v end })
     PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = function(v) AutoRespawnEnabled = v end })
 
-    -- 通用 (已移除内建飞行和聊天间谍)
+    -- 通用
     local OtherTab = Window:Tab({ Title = "通用", Icon = "info" })
     OtherTab:Button({ Title = "一键飞行(外部)", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/flyab.lua"))() end })
     OtherTab:Button({ Title = "祖国人汉化", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化"))() end })
@@ -718,9 +716,6 @@ function createUI()
     OtherTab:Button({ Title = "一键清屏", Callback = ToggleClearScreen })
     OtherTab:Button({ Title = "点击传送工具", Callback = CreateClickTPTool })
 
-    -- 以下是第二部分，将接着发送
-    return "第一部分结束，请等待第二部分..."
-end
     -- 透视功能
     local ESPTab = Window:Tab({ Title = "透视功能", Icon = "eye" })
     ESPTab:Toggle({ Title = "玩家透视", Default = false, Callback = function(v) PLAYER_ESP.Enabled = v; if not v then ClearPlayerESP() end end })
