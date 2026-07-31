@@ -872,9 +872,9 @@ end, 990)
         Desc = "交流群：暂时没想要交流群\n如有问题或建议，欢迎反馈\n你们的支持是我更新的动力 🤓",
     })
     MainTab:Button({
-        Title = "📋 复制交流群号",
+        Title = "📋 复制交流群18码号",
         Callback = function()
-            if setclipboard then setclipboard("1081045774"); Notify("已复制", "群号：1081045774", 2) end
+            if setclipboard then setclipboard("牛逼"); Notify("已复制", "群号：没有", 2) end
         end
     })
 
@@ -920,27 +920,57 @@ end, 990)
         .. "【V1.2测试版】新增音乐播放器分区，美化主页界面，添加动漫背景，标题栏彩虹时间，优化主题记忆功能\n\n"
         .. "【V1.0测试版】首个版本，整合自瞄、透视、传送、甩飞等基础功能"
 })
-    NoticeTab:Button({ Title = "📋 复制交流群号", Callback = function() if setclipboard then setclipboard("1081045774"); Notify("已复制", "群号：1081045774", 2) end end })
-    NoticeTab:Button({ Title = "🔗 复制脚本更新链接", Callback = function() if setclipboard then setclipboard("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"); Notify("已复制", "WindUI 加载链接已复制", 2) end end })
+    NoticeTab:Button({ Title = "📋 复制交流群18码号", Callback = function() if setclipboard then setclipboard("1081045774"); Notify("已复制", "群号：4", 2) end end })
+    NoticeTab:Button({ Title = "🔗 复制脚本更新18码", Callback = function() if setclipboard then setclipboard("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"); Notify("已复制", "WindUI 加载链接已复制", 2) end end })
 
     -- 玩家功能
-    local PlayerFuncTab = Window:Tab({ Title = "玩家功能", Icon = "zap" })
-    local SpeedEnabled = false
-    PlayerFuncTab:Toggle({ Title = "开启速度修改", Default = false, Callback = function(v)
-        SpeedEnabled = v; local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid"); if h then h.WalkSpeed = v and TargetWalkSpeed or 16 end
-    end })
-    PlayerFuncTab:Input({ Title = "速度数值", Placeholder = "16", Callback = function(v) local n = tonumber(v); if n then TargetWalkSpeed = math.clamp(n,0,400) end end })
-    PlayerFuncTab:Toggle({ Title = "开启快速跑步", Default = false, Callback = function(enabled)
-        if enabled then if sudu then sudu:Disconnect() end; sudu = RunService.Heartbeat:Connect(function() local lp = LocalPlayer; if lp.Character and lp.Character:FindFirstChild("Humanoid") and lp.Character.Humanoid.MoveDirection.Magnitude > 0 then lp.Character:TranslateBy(lp.Character.Humanoid.MoveDirection * FastRunSpeed / 0.5) end end) else if sudu then sudu:Disconnect(); sudu = nil end end
-    end })
-    PlayerFuncTab:Input({ Title = "快速跑步强度", Placeholder = "50", Callback = function(text) local n = tonumber(text); if n then FastRunSpeed = math.clamp(n,0,200) end end })
-    PlayerFuncTab:Toggle({ Title = "开启跳跃修改", Default = false, Callback = function(v) CustomJumpEnabled = v; local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid"); if h then h.UseJumpPower = true; h.JumpPower = v and CustomJumpValue or 50 end end })
-    PlayerFuncTab:Slider({ Title = "跳跃高度", Value = { Min = 50, Max = 600, Default = 50 }, Increment = 1, Callback = function(v) CustomJumpValue = v; if CustomJumpEnabled then local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid"); if h then h.UseJumpPower = true; h.JumpPower = v end end end })
-    UserInputService.JumpRequest:Connect(function() if InfiniteJumpEnabled then local char = LocalPlayer.Character; if char and char:FindFirstChildOfClass("Humanoid") then char.Humanoid:ChangeState("Jumping") end end end)
-    PlayerFuncTab:Toggle({ Title = "无限跳跃", Default = false, Callback = function(v) InfiniteJumpEnabled = v end })
-    PlayerFuncTab:Toggle({ Title = "自动拾取", Default = false, Callback = function(v) AutoPickupEnabled = v; startPickupLoop() end })
-    PlayerFuncTab:Slider({ Title = "拾取范围", Value = { Min = 5, Max = 50, Default = 10 }, Increment = 1, Callback = function(v) PickupRange = v end })
-    PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = function(v) AutoRespawnEnabled = v end })
+local PlayerFuncTab = Window:Tab({ Title = "玩家功能", Icon = "zap" })
+
+-- 移动速度（滑块直接控制，循环应用）
+PlayerFuncTab:Slider({ Title = "移动速度", Value = { Min = 16, Max = 400, Default = 16 }, Increment = 1, Callback = function(v)
+    getgenv().CustomWalkSpeed = v
+end })
+task.spawn(function()
+    while true do
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Parent then
+            hum.WalkSpeed = getgenv().CustomWalkSpeed or 16
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- 跳跃高度（滑块直接控制，循环应用）
+PlayerFuncTab:Slider({ Title = "跳跃高度", Value = { Min = 50, Max = 600, Default = 50 }, Increment = 1, Callback = function(v)
+    getgenv().CustomJumpPower = v
+end })
+task.spawn(function()
+    while true do
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Parent then
+            hum.UseJumpPower = true
+            hum.JumpPower = getgenv().CustomJumpPower or 50
+        end
+        task.wait(0.1)
+    end
+end)
+
+-- 快速跑步（保留原逻辑，若不需要可删除）
+local FastRunSpeed = 50; local sudu = nil
+PlayerFuncTab:Toggle({ Title = "开启快速跑步", Default = false, Callback = function(enabled)
+    if enabled then if sudu then sudu:Disconnect() end; sudu = RunService.Heartbeat:Connect(function() local lp = LocalPlayer; if lp.Character and lp.Character:FindFirstChild("Humanoid") and lp.Character.Humanoid.MoveDirection.Magnitude > 0 then lp.Character:TranslateBy(lp.Character.Humanoid.MoveDirection * FastRunSpeed / 0.5) end end) else if sudu then sudu:Disconnect(); sudu = nil end end
+end })
+PlayerFuncTab:Input({ Title = "快速跑步强度", Placeholder = "50", Callback = function(text) local n = tonumber(text); if n then FastRunSpeed = math.clamp(n,0,200) end end })
+
+-- 无限跳跃
+PlayerFuncTab:Toggle({ Title = "无限跳跃", Default = false, Callback = function(v) InfiniteJumpEnabled = v end })
+
+-- 自动拾取、自动重生保留原样...
+PlayerFuncTab:Toggle({ Title = "自动拾取", Default = false, Callback = function(v) AutoPickupEnabled = v; startPickupLoop() end })
+PlayerFuncTab:Slider({ Title = "拾取范围", Value = { Min = 5, Max = 50, Default = 10 }, Increment = 1, Callback = function(v) PickupRange = v end })
+PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = function(v) AutoRespawnEnabled = v end })
 
     -- 通用
     local OtherTab = Window:Tab({ Title = "通用", Icon = "info" })
@@ -1202,6 +1232,254 @@ end, 990)
         loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/359e97f8618e9008afe5f496184ebb7c.lua"))()
     end
 })
+-- 忍者传奇辅助按钮
+GameTab:Button({
+    Title = "忍者传奇",
+    Callback = function()
+        -- 创建一个独立的忍者传奇辅助窗口
+        local NinjaWindow = WindUI:CreateWindow({
+            Title = "忍者传奇辅助",
+            Icon = "sword",
+            Size = UDim2.fromOffset(500, 400),
+            Theme = "Dark",
+            Resizable = true,
+            Background = "https://i.ibb.co/KzpGVsQR/153941.png",
+            BackgroundImageTransparency = 0.5,
+        })
+
+        -- 主题切换（同款月亮按钮）
+        NinjaWindow:CreateTopbarButton("ThemeToggle", "moon", function()
+            local ct = WindUI:GetCurrentTheme()
+            if ct == "Dark" then
+                pcall(function()
+                    WindUI:AddTheme({
+                        Name = "LightTransparent",
+                        Background = Color3.fromRGB(240,240,245),
+                        WindowBackground = Color3.fromRGB(255,255,255),
+                        Text = Color3.fromRGB(20,20,25),
+                        Icon = Color3.fromRGB(120,120,130),
+                        Button = Color3.fromRGB(180,180,190),
+                        Hover = Color3.fromRGB(255,255,255),
+                        Placeholder = Color3.fromRGB(150,150,160),
+                        Outline = Color3.fromRGB(200,200,210),
+                        TabTitle = Color3.fromRGB(20,20,25),
+                        TabIcon = Color3.fromRGB(120,120,130),
+                        ElementTitle = Color3.fromRGB(20,20,25),
+                        ElementDesc = Color3.fromRGB(120,120,130),
+                        ElementBackground = Color3.fromRGB(220,220,225),
+                        Toggle = Color3.fromRGB(180,180,190),
+                        ToggleBar = Color3.fromRGB(255,255,255),
+                        Slider = Color3.fromRGB(180,180,190),
+                        SliderThumb = Color3.fromRGB(255,255,255),
+                        Checkbox = Color3.fromRGB(180,180,190),
+                        CheckboxIcon = Color3.fromRGB(255,255,255),
+                        Accent = WindUI:Gradient({
+                            ["0"] = { Color = Color3.fromRGB(200,180,255), Transparency = 0.5 },
+                            ["100"] = { Color = Color3.fromRGB(140,120,200), Transparency = 0.5 },
+                        }),
+                    })
+                end)
+                WindUI:SetTheme("LightTransparent")
+                if NinjaWindow and NinjaWindow.UIElements and NinjaWindow.UIElements.Main then
+                    NinjaWindow.UIElements.Main.BackgroundTransparency = 0.6
+                end
+                WindUI:Notify({ Title = "主题切换", Content = "亮色半透明模式", Duration = 2 })
+            else
+                WindUI:SetTheme("Dark")
+                WindUI:Notify({ Title = "主题切换", Content = "暗色模式", Duration = 2 })
+            end
+        end, 990)
+
+        -- 主要功能 Tab
+        local NinjaTab = NinjaWindow:Tab({ Title = "主要功能", Icon = "zap" })
+
+        local ranks = {"Student", "Genin", "Chunin", "Jonin", "Anbu", "Kage", "Legendary", "Mythical", "Eternal", "Divine"}
+
+        -- 自动挥舞
+        NinjaTab:Toggle({
+            Title = "自动挥舞", Default = false,
+            Callback = function(enabled)
+                getgenv().autoswing = enabled
+                if enabled then
+                    task.spawn(function()
+                        while getgenv().autoswing do
+                            pcall(function()
+                                local player = Players.LocalPlayer
+                                for _, tool in pairs(player.Backpack:GetChildren()) do
+                                    if tool:FindFirstChild("ninjitsuGain") then
+                                        local char = player.Character
+                                        local hum = char and char:FindFirstChildOfClass("Humanoid")
+                                        if hum and hum.Parent then hum:EquipTool(tool) end
+                                        break
+                                    end
+                                end
+                                local ninjaEvent = player:FindFirstChild("ninjaEvent")
+                                if ninjaEvent then ninjaEvent:FireServer("swingKatana") end
+                            end)
+                            task.wait(0.5)
+                        end
+                    end)
+                else
+                    getgenv().autoswing = false
+                end
+            end
+        })
+
+        -- 自动售卖
+        NinjaTab:Toggle({
+            Title = "自动售卖", Default = false,
+            Callback = function(enabled)
+                getgenv().autosell = enabled
+                if enabled then
+                    task.spawn(function()
+                        while getgenv().autosell do
+                            pcall(function()
+                                local sellPart = Workspace.sellAreaCircles.sellAreaCircle16.circleInner
+                                local root = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                                if sellPart and root then
+                                    sellPart.CFrame = root.CFrame
+                                    task.wait(0.1)
+                                    sellPart.CFrame = CFrame.new(0, 0, 0)
+                                    task.wait(0.1)
+                                end
+                            end)
+                            task.wait()
+                        end
+                    end)
+                end
+            end
+        })
+
+        -- 自动购买排名
+        NinjaTab:Toggle({
+            Title = "自动购买排名", Default = false,
+            Callback = function(enabled)
+                getgenv().autobuyranks = enabled
+                if enabled then
+                    task.spawn(function()
+                        while getgenv().autobuyranks do
+                            pcall(function()
+                                for _, rank in ipairs(ranks) do
+                                    Players.LocalPlayer.ninjaEvent:FireServer("buyRank", rank)
+                                end
+                            end)
+                            task.wait(0.5)
+                        end
+                    end)
+                end
+            end
+        })
+
+        -- 自动购买腰带
+        NinjaTab:Toggle({
+            Title = "自动购买腰带", Default = false,
+            Callback = function(enabled)
+                getgenv().autobuybelts = enabled
+                if enabled then
+                    task.spawn(function()
+                        while getgenv().autobuybelts do
+                            pcall(function()
+                                Players.LocalPlayer.ninjaEvent:FireServer("buyAllBelts", "Inner Peace Island")
+                            end)
+                            task.wait(0.5)
+                        end
+                    end)
+                end
+            end
+        })
+
+        -- 自动购买技能
+        NinjaTab:Toggle({
+            Title = "自动购买技能", Default = false,
+            Callback = function(enabled)
+                getgenv().autobuyskills = enabled
+                if enabled then
+                    task.spawn(function()
+                        while getgenv().autobuyskills do
+                            pcall(function()
+                                Players.LocalPlayer.ninjaEvent:FireServer("buyAllSkills", "Inner Peace Island")
+                            end)
+                            task.wait(0.5)
+                        end
+                    end)
+                end
+            end
+        })
+
+        -- 自动购买剑
+        NinjaTab:Toggle({
+            Title = "自动购买剑", Default = false,
+            Callback = function(enabled)
+                getgenv().autobuy = enabled
+                if enabled then
+                    task.spawn(function()
+                        while getgenv().autobuy do
+                            pcall(function()
+                                Players.LocalPlayer.ninjaEvent:FireServer("buyAllSwords", "Inner Peace Island")
+                            end)
+                            task.wait(0.5)
+                        end
+                    end)
+                end
+            end
+        })
+
+        -- 解锁所有岛
+        NinjaTab:Button({
+            Title = "解锁所有岛",
+            Callback = function()
+                for _, islandPart in ipairs(Workspace.islandUnlockParts:GetChildren()) do
+                    if islandPart and islandPart:FindFirstChild("islandSignPart") then
+                        local root = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                        if root then
+                            root.CFrame = islandPart.islandSignPart.CFrame
+                            task.wait(0.5)
+                        end
+                    end
+                end
+            end
+        })
+
+        -- 传送点
+        NinjaTab:Paragraph({ Title = "传送功能", Desc = "" })
+        local teleportList = {
+            {"出生点", CFrame.new(25.67, 3.42, 29.92)},
+            {"附魔岛", CFrame.new(51.17, 766.18, -138.45)},
+            {"神秘岛", CFrame.new(171.97, 4047.38, 42.07)},
+            {"太空岛", CFrame.new(148.84, 5657.19, 73.50)},
+            {"冻土岛", CFrame.new(139.28, 9285.18, 77.36)},
+            {"永恒岛", CFrame.new(149.35, 13680.04, 73.39)},
+            {"沙暴岛", CFrame.new(133.37, 17686.33, 72.00)},
+            {"雷暴岛", CFrame.new(143.19, 24070.02, 78.05)},
+            {"远古炼狱岛", CFrame.new(141.27, 28256.29, 69.38)},
+            {"午夜暗影岛", CFrame.new(132.74, 33206.98, 57.50)},
+            {"神秘灵魂岛", CFrame.new(137.76, 39317.57, 61.07)},
+            {"冬季奇迹岛", CFrame.new(137.27, 46010.55, 55.94)},
+            {"黄金大师岛", CFrame.new(128.32, 52607.77, 56.69)},
+            {"龙传奇岛", CFrame.new(146.35, 59594.68, 77.53)},
+            {"赛博传奇岛", CFrame.new(137.33, 66669.16, 72.22)},
+            {"天岚超能岛", CFrame.new(135.48, 70271.16, 57.02)},
+            {"混沌传奇岛", CFrame.new(148.59, 74442.85, 69.32)},
+            {"灵魂融合岛", CFrame.new(136.97, 79746.98, 58.54)},
+            {"黑暗元素岛", CFrame.new(141.70, 83198.98, 72.73)},
+            {"内心和平岛", CFrame.new(135.32, 87051.06, 66.78)},
+            {"炽烈漩涡岛", CFrame.new(135.08, 91246.07, 69.57)},
+            {"35倍金币区域", CFrame.new(86.29, 91245.77, 120.54)},
+            {"死亡宠物", CFrame.new(4593.21, 130.87, 1430.22)},
+        }
+        for _, data in ipairs(teleportList) do
+            NinjaTab:Button({
+                Title = "传送到" .. data[1],
+                Callback = function()
+                    local root = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                    if root then root.CFrame = data[2] end
+                end
+            })
+        end
+
+        WindUI:Notify({ Title = "忍者传奇", Content = "辅助窗口已开启", Duration = 2 })
+    end
+})
 
     -- 脚本中心
     local ScriptCenterTab = Window:Tab({ Title = "脚本中心", Icon = "file-text" })
@@ -1396,30 +1674,79 @@ end, 990)
     StopTab:Button({ Title = "强制退出", Callback = function() pcall(function() game:Shutdown() end) end })
     StopTab:Button({ Title = "自杀", Callback = function() local c = LocalPlayer.Character; if c and c:FindFirstChildOfClass("Humanoid") then c.Humanoid.Health = 0 end end })
 
-    -- 配置（含主题切换）
-    local ConfigTab = Window:Tab({ Title = "配置", Icon = "settings" })
-    ConfigTab:Toggle({ Title = "管理员检测", Default = true, Callback = function(v) AdminDetectEnabled = v end })
-    ConfigTab:Button({ Title = "重新进入服务器", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
-    ConfigTab:Toggle({ Title = "反挂机", Default = false, Callback = function(v) AntiAFKEnabled = v; startAntiAFK() end })
-    ConfigTab:Button({ Title = "导出配置", Callback = exportConfig })
-    ConfigTab:Button({ Title = "导入配置", Callback = importConfig })
-    ConfigTab:Toggle({ Title = "崩溃保护", Default = true, Callback = function(v) CrashProtectionEnabled = v end })
-    local ThemeList = {}
-    pcall(function() ThemeList = WindUI:GetThemes() end)
-    local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
-    for _, v in ipairs(CustomThemes) do if not table.find(ThemeList, v) then table.insert(ThemeList, v) end end
-    local NewList = {"Dark"}
-    for _, v in ipairs(ThemeList) do if v ~= "Dark" then table.insert(NewList, v) end end
-    ThemeList = NewList
-    ConfigTab:Dropdown({
-        Title = "UI主题", Values = ThemeList, Default = CurrentTheme,
-        Callback = function(v)
-            CurrentTheme = v
-            pcall(function() WindUI:SetTheme(v) end)
-            pcall(function() if writefile then writefile(ThemeFile, v) end end)
-            Notify("主题切换", "已切换为 "..tostring(v), 2, "success")
+   -- 配置（含主题切换）
+local ConfigTab = Window:Tab({ Title = "配置", Icon = "settings" })
+ConfigTab:Toggle({ Title = "管理员检测", Default = true, Callback = function(v) AdminDetectEnabled = v end })
+ConfigTab:Button({ Title = "重新进入服务器", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
+ConfigTab:Toggle({ Title = "反挂机", Default = false, Callback = function(v) AntiAFKEnabled = v; startAntiAFK() end })
+ConfigTab:Button({ Title = "导出配置", Callback = exportConfig })
+ConfigTab:Button({ Title = "导入配置", Callback = importConfig })
+ConfigTab:Toggle({ Title = "崩溃保护", Default = true, Callback = function(v) CrashProtectionEnabled = v end })
+
+local ThemeList = {}
+pcall(function() ThemeList = WindUI:GetThemes() end)
+local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
+for _, v in ipairs(CustomThemes) do if not table.find(ThemeList, v) then table.insert(ThemeList, v) end end
+local NewList = {"Dark"}
+for _, v in ipairs(ThemeList) do if v ~= "Dark" then table.insert(NewList, v) end end
+ThemeList = NewList
+
+ConfigTab:Dropdown({
+    Title = "UI主题", Values = ThemeList, Default = CurrentTheme,
+    Callback = function(v)
+        CurrentTheme = v
+        pcall(function() WindUI:SetTheme(v) end)
+        pcall(function() if writefile then writefile(ThemeFile, v) end end)
+        Notify("主题切换", "已切换为 "..tostring(v), 2, "success")
+    end
+})
+
+-- 关闭脚本按钮
+ConfigTab:Button({
+    Title = "关闭脚本",
+    Callback = function()
+        pcall(function() game:Shutdown() end)
+    end
+})
+
+-- 彩虹渐变签名开关
+ConfigTab:Toggle({
+    Title = "彩虹签名",
+    Default = false,
+    Callback = function(state)
+        if state then
+            local gui = Instance.new("ScreenGui", CoreGui)
+            gui.Name = "RainbowSignature"
+            local label = Instance.new("TextLabel", gui)
+            label.Size = UDim2.new(0, 300, 0, 30)
+            label.Position = UDim2.new(0, 10, 0, 10)
+            label.BackgroundTransparency = 1
+            label.Text = "尊贵的妥协 Hub 用户: " .. LocalPlayer.DisplayName
+            label.Font = Enum.Font.SourceSansBold
+            label.TextSize = 18
+            local grad = Instance.new("UIGradient", label)
+            grad.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+                ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255,255,0)),
+                ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0,255,0)),
+                ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0,255,255)),
+                ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0,0,255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,255))
+            })
+            task.spawn(function()
+                local angle = 0
+                while gui.Parent do
+                    angle = (angle + 1) % 360
+                    grad.Rotation = angle
+                    task.wait(0.05)
+                end
+            end)
+        else
+            local gui = CoreGui:FindFirstChild("RainbowSignature")
+            if gui then gui:Destroy() end
         end
-    })
+    end
+})
 
     -- 音乐播放器
     local MusicTab = Window:Tab({ Title = "音乐播放器", Icon = "music" })
@@ -1533,5 +1860,17 @@ end, 990)
         end
     end
 
-    Notify("脚本加载成功 v1.5", "所有功能已就绪", 3)
+    local function rainbowText(str)
+    local colors = {
+        Color3.fromRGB(255,0,0), Color3.fromRGB(255,127,0), Color3.fromRGB(255,255,0),
+        Color3.fromRGB(0,255,0), Color3.fromRGB(0,0,255), Color3.fromRGB(75,0,130), Color3.fromRGB(143,0,255)
+    }
+    local result = ""
+    for i = 1, #str do
+        local col = colors[(i-1)%#colors+1]
+        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', 
+            math.floor(col.R*255), math.floor(col.G*255), math.floor(col.B*255), str:sub(i,i))
+    end
+    return result
 end
+Notify(rainbowText("脚本加载成功 v1.5"), rainbowText("所有功能已就绪"), 3)
