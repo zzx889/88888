@@ -872,9 +872,9 @@ end, 990)
         Desc = "交流群：暂时没想要交流群\n如有问题或建议，欢迎反馈\n你们的支持是我更新的动力 🤓",
     })
     MainTab:Button({
-        Title = "📋 复制交流群18码号",
+        Title = "📋 复制交流群号",
         Callback = function()
-            if setclipboard then setclipboard("牛逼"); Notify("已复制", "群号：没有", 2) end
+            if setclipboard then setclipboard("1081045774"); Notify("已复制", "群号：1081045774", 2) end
         end
     })
 
@@ -920,8 +920,8 @@ end, 990)
         .. "【V1.2测试版】新增音乐播放器分区，美化主页界面，添加动漫背景，标题栏彩虹时间，优化主题记忆功能\n\n"
         .. "【V1.0测试版】首个版本，整合自瞄、透视、传送、甩飞等基础功能"
 })
-    NoticeTab:Button({ Title = "📋 复制交流群18码号", Callback = function() if setclipboard then setclipboard("1081045774"); Notify("已复制", "群号：4", 2) end end })
-    NoticeTab:Button({ Title = "🔗 复制脚本更新18码", Callback = function() if setclipboard then setclipboard("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"); Notify("已复制", "WindUI 加载链接已复制", 2) end end })
+    NoticeTab:Button({ Title = "📋 复制交流群号", Callback = function() if setclipboard then setclipboard("1081045774"); Notify("已复制", "群号：1081045774", 2) end end })
+    NoticeTab:Button({ Title = "🔗 复制脚本更新链接", Callback = function() if setclipboard then setclipboard("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"); Notify("已复制", "WindUI 加载链接已复制", 2) end end })
 
     -- 玩家功能
 local PlayerFuncTab = Window:Tab({ Title = "玩家功能", Icon = "zap" })
@@ -1238,7 +1238,7 @@ GameTab:Button({
     Callback = function()
         -- 创建一个独立的忍者传奇辅助窗口
         local NinjaWindow = WindUI:CreateWindow({
-            Title = "忍者传奇辅助",
+            Title = "忍者传奇",
             Icon = "sword",
             Size = UDim2.fromOffset(500, 400),
             Theme = "Dark",
@@ -1861,16 +1861,17 @@ ConfigTab:Toggle({
     end
 
     local function rainbowText(str)
-    local colors = {
-        Color3.fromRGB(255,0,0), Color3.fromRGB(255,127,0), Color3.fromRGB(255,255,0),
-        Color3.fromRGB(0,255,0), Color3.fromRGB(0,0,255), Color3.fromRGB(75,0,130), Color3.fromRGB(143,0,255)
-    }
-    local result = ""
-    for i = 1, #str do
-        local col = colors[(i-1)%#colors+1]
-        result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', 
-            math.floor(col.R*255), math.floor(col.G*255), math.floor(col.B*255), str:sub(i,i))
+        local colors = {
+            Color3.fromRGB(255,0,0), Color3.fromRGB(255,127,0), Color3.fromRGB(255,255,0),
+            Color3.fromRGB(0,255,0), Color3.fromRGB(0,0,255), Color3.fromRGB(75,0,130), Color3.fromRGB(143,0,255)
+        }
+        local result = ""
+        for i = 1, #str do
+            local col = colors[(i-1)%#colors+1]
+            result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', 
+                math.floor(col.R*255), math.floor(col.G*255), math.floor(col.B*255), str:sub(i,i))
+        end
+        return result
     end
-    return result
+    Notify(rainbowText("脚本加载成功 v1.5"), rainbowText("所有功能已就绪"), 3)
 end
-Notify(rainbowText("脚本加载成功 v1.5"), rainbowText("所有功能已就绪"), 3)
