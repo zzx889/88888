@@ -12,6 +12,7 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+
 function gradient(text, startColor, endColor)
     local result = ""; local chars = {}
     for uchar in text:gmatch("[%z\1-\127\194-\244][\128-\191]*") do table.insert(chars, uchar) end
@@ -407,7 +408,7 @@ function createUI()
     NPCESP = { Enabled = false, Color = Color3.fromRGB(0,162,255), Highlights = {} }; local npcConnection = nil
     InteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }; local Connections = {}
     NewInteractESP = { Enabled = false, Color = Color3.fromRGB(0,255,0), Highlights = {} }
-    Freecam = {Enabled = false, Speed = 2, Sensitivity = 0.01, Rig = nil, Loop = nil, Yaw = 0, Pitch = 0, MoveInput = Vector2.zero, Connections = {}, Touch = {Move = nil, Look = nil}, _InputInited = false}
+    Freecam = {Enabled = false, Speed = 2, Sensitivity = 0.01, Rig = nil, Loop = nil, Yaw = 0, Pitch = 0, MoveInput = Vector2.zero, Connections = {}, Touch = {Move = nil, Look = nil, MoveStart = Vector2.zero}, _InputInited = false}
     AntiFallEnabled = false; AntiFallConnection = nil; AntiFall2Enabled = false; AntiFall2Connection = nil
     ThirdPersonUnlock = {Enabled = false, Connection = nil}
     AdminDetectEnabled = true; flaggedAdmins = {}
@@ -437,10 +438,8 @@ function createUI()
         HeartbeatConnection = nil,
         TranslationCache = {},
         TranslatedInstances = {},
-        EmoteKeywords = {"neon", "shine", "ghost", "gold", "spin", "bighead", "smallhead", "giant", "squash"},
-    }
-
-    local Window = WindUI:CreateWindow({
+        EmoteKeywords = {"neon", "shine", "ghost", "gold", "spin", "bighead", "smallhead", "giant", "squash"},}
+            local Window = WindUI:CreateWindow({
         Title = gradient("妥协", Color3.fromHex("#00DBDE"), Color3.fromHex("#FC00FF")),
         Icon = "paint-bucket",
         IconThemed = true,
@@ -471,47 +470,46 @@ function createUI()
     WindUI:SetNotificationLower(true)
 
     Window:CreateTopbarButton("ThemeToggle", "moon", function()
-    local ct = WindUI:GetCurrentTheme()
-    if ct == "Dark" then
-        -- 切换到自定义透明亮色主题
-        pcall(function()
-            WindUI:AddTheme({
-                Name = "LightTransparent",
-                Background = Color3.fromRGB(240,240,245),
-                WindowBackground = Color3.fromRGB(255,255,255),
-                Text = Color3.fromRGB(20,20,25),
-                Icon = Color3.fromRGB(120,120,130),
-                Button = Color3.fromRGB(180,180,190),
-                Hover = Color3.fromRGB(255,255,255),
-                Placeholder = Color3.fromRGB(150,150,160),
-                Outline = Color3.fromRGB(200,200,210),
-                TabTitle = Color3.fromRGB(20,20,25),
-                TabIcon = Color3.fromRGB(120,120,130),
-                ElementTitle = Color3.fromRGB(20,20,25),
-                ElementDesc = Color3.fromRGB(120,120,130),
-                ElementBackground = Color3.fromRGB(220,220,225),
-                Toggle = Color3.fromRGB(180,180,190),
-                ToggleBar = Color3.fromRGB(255,255,255),
-                Slider = Color3.fromRGB(180,180,190),
-                SliderThumb = Color3.fromRGB(255,255,255),
-                Checkbox = Color3.fromRGB(180,180,190),
-                CheckboxIcon = Color3.fromRGB(255,255,255),
-                Accent = WindUI:Gradient({
-                    ["0"] = { Color = Color3.fromRGB(200,180,255), Transparency = 0.5 },
-                    ["100"] = { Color = Color3.fromRGB(140,120,200), Transparency = 0.5 },
-                }),
-            })
-        end)
-        WindUI:SetTheme("LightTransparent")
-        if Window and Window.UIElements and Window.UIElements.Main then
-            Window.UIElements.Main.BackgroundTransparency = 0.6
+        local ct = WindUI:GetCurrentTheme()
+        if ct == "Dark" then
+            pcall(function()
+                WindUI:AddTheme({
+                    Name = "LightTransparent",
+                    Background = Color3.fromRGB(240,240,245),
+                    WindowBackground = Color3.fromRGB(255,255,255),
+                    Text = Color3.fromRGB(20,20,25),
+                    Icon = Color3.fromRGB(120,120,130),
+                    Button = Color3.fromRGB(180,180,190),
+                    Hover = Color3.fromRGB(255,255,255),
+                    Placeholder = Color3.fromRGB(150,150,160),
+                    Outline = Color3.fromRGB(200,200,210),
+                    TabTitle = Color3.fromRGB(20,20,25),
+                    TabIcon = Color3.fromRGB(120,120,130),
+                    ElementTitle = Color3.fromRGB(20,20,25),
+                    ElementDesc = Color3.fromRGB(120,120,130),
+                    ElementBackground = Color3.fromRGB(220,220,225),
+                    Toggle = Color3.fromRGB(180,180,190),
+                    ToggleBar = Color3.fromRGB(255,255,255),
+                    Slider = Color3.fromRGB(180,180,190),
+                    SliderThumb = Color3.fromRGB(255,255,255),
+                    Checkbox = Color3.fromRGB(180,180,190),
+                    CheckboxIcon = Color3.fromRGB(255,255,255),
+                    Accent = WindUI:Gradient({
+                        ["0"] = { Color = Color3.fromRGB(200,180,255), Transparency = 0.5 },
+                        ["100"] = { Color = Color3.fromRGB(140,120,200), Transparency = 0.5 },
+                    }),
+                })
+            end)
+            WindUI:SetTheme("LightTransparent")
+            if Window and Window.UIElements and Window.UIElements.Main then
+                Window.UIElements.Main.BackgroundTransparency = 0.6
+            end
+            Notify("主题切换", "亮色半透明模式", 2)
+        else
+            WindUI:SetTheme("Dark")
+            Notify("主题切换", "暗色模式", 2)
         end
-        Notify("主题切换", "亮色半透明模式", 2)
-    else
-        WindUI:SetTheme("Dark")
-        Notify("主题切换", "暗色模式", 2)
-    end
-end, 990)
+    end, 990)
 
     Window:EditOpenButton({
         Title = "妥协",
@@ -793,7 +791,7 @@ end, 990)
     -- 自由视角
     local function InitFreecamInput()
         if Freecam._InputInited then return end; Freecam._InputInited = true
-        table.insert(Freecam.Connections, UserInputService.TouchStarted:Connect(function(t) if not Freecam.Enabled then return end; local half = Camera.ViewportSize.X/2; if t.Position.X < half and not Freecam.Touch.Move then Freecam.Touch.Move = t; Freecam.MoveInput = Vector2.zero elseif not Freecam.Touch.Look then Freecam.Touch.Look = t end end))
+        table.insert(Freecam.Connections, UserInputService.TouchStarted:Connect(function(t) if not Freecam.Enabled then return end; local half = Camera.ViewportSize.X/2; if t.Position.X < half and not Freecam.Touch.Move then Freecam.Touch.Move = t; Freecam.Touch.MoveStart = t.Position; Freecam.MoveInput = Vector2.zero elseif not Freecam.Touch.Look then Freecam.Touch.Look = t end end))
         table.insert(Freecam.Connections, UserInputService.TouchMoved:Connect(function(t) if not Freecam.Enabled then return end; if t == Freecam.Touch.Move then local delta = t.Position - Freecam.Touch.MoveStart; Freecam.MoveInput = Vector2.new(math.clamp(delta.X/80,-1,1), math.clamp(-delta.Y/80,-1,1)) elseif t == Freecam.Touch.Look then local d = t.Delta; Freecam.Yaw -= d.X*Freecam.Sensitivity; Freecam.Pitch = math.clamp(Freecam.Pitch - d.Y*Freecam.Sensitivity, math.rad(-85), math.rad(85)) end end))
     end
     local function StartFreecam() if Freecam.Enabled then return end; Freecam.Enabled = true; InitFreecamInput(); local char = LocalPlayer.Character; if not char then return end; local root = char:FindFirstChild("HumanoidRootPart"); local hum = char:FindFirstChildOfClass("Humanoid"); if not root or not hum then return end; if not Freecam.Rig then Freecam.Rig = Instance.new("Part", Workspace); Freecam.Rig.Anchored = true; Freecam.Rig.CanCollide = false; Freecam.Rig.Transparency = 1; Freecam.Rig.Size = Vector3.new(1,1,1) end; Freecam.Rig.CFrame = Camera.CFrame; root.Anchored = true; hum.AutoRotate = false; hum.PlatformStand = true; Camera.CameraType = Enum.CameraType.Scriptable; local x,y = Camera.CFrame:ToEulerAnglesYXZ(); Freecam.Yaw = y; Freecam.Pitch = x; Freecam.Loop = RunService.RenderStepped:Connect(function() local rotCF = CFrame.Angles(0,Freecam.Yaw,0)*CFrame.Angles(Freecam.Pitch,0,0); local cf = CFrame.new(Freecam.Rig.Position)*rotCF; local move = (cf.RightVector*Freecam.MoveInput.X)+(cf.LookVector*Freecam.MoveInput.Y); Freecam.Rig.CFrame = CFrame.new(Freecam.Rig.Position + move*Freecam.Speed)*rotCF; Camera.CFrame = Freecam.Rig.CFrame end) end
@@ -913,68 +911,472 @@ end, 990)
             .. "• ✨ 持续更新，加入更多功能和缝合热门服务器脚本🔥"
     })
     NoticeTab:Paragraph({
-    Title = gradient("📝 历史更新日志", Color3.fromHex("#FFB347"), Color3.fromHex("#FF6B6B")),
-    Desc = "【V1.5测试版】新增多套自定义主题（黑金/极光/青/蓝）、配置区主题下拉切换、流光彩虹窗口边框、脚本中心分区（皮/叶/恐）、点击传送工具、一键清屏可拖拽、这次优化了TX翻译、启动公告系统优化、这次添加了一个新的服务器功能是+一速度键盘\n\n"
-        .. "【V1.4测试版】新增自动拾取、子弹追踪、物品透视、反挂机、快捷键、自动重生、虚假消息、角色变形、爆炸击飞、云端配置、崩溃保护、TX翻译、忍者传奇\n\n"
-        .. "【V1.3测试版】全新UI框架，支持搜索和主题切换，新增启动弹窗确认，标题栏动态时间显示\n\n"
-        .. "【V1.2测试版】新增音乐播放器分区，美化主页界面，添加动漫背景，标题栏彩虹时间，优化主题记忆功能\n\n"
-        .. "【V1.0测试版】首个版本，整合自瞄、透视、传送、甩飞等基础功能"
-})
+        Title = gradient("📝 历史更新日志", Color3.fromHex("#FFB347"), Color3.fromHex("#FF6B6B")),
+        Desc = "【V1.5测试版】新增多套自定义主题（黑金/极光/青/蓝）、配置区主题下拉切换、流光彩虹窗口边框、脚本中心分区（皮/叶/恐）、点击传送工具、一键清屏可拖拽、这次优化了TX翻译、启动公告系统优化、这次添加了一个新的服务器功能是+一速度键盘\n\n"
+            .. "【V1.4测试版】新增自动拾取、子弹追踪、物品透视、反挂机、快捷键、自动重生、虚假消息、角色变形、爆炸击飞、云端配置、崩溃保护、TX翻译、忍者传奇\n\n"
+            .. "【V1.3测试版】全新UI框架，支持搜索和主题切换，新增启动弹窗确认，标题栏动态时间显示\n\n"
+            .. "【V1.2测试版】新增音乐播放器分区，美化主页界面，添加动漫背景，标题栏彩虹时间，优化主题记忆功能\n\n"
+            .. "【V1.0测试版】首个版本，整合自瞄、透视、传送、甩飞等基础功能"
+    })
     NoticeTab:Button({ Title = "📋 复制交流群号", Callback = function() if setclipboard then setclipboard("1081045774"); Notify("已复制", "群号：1081045774", 2) end end })
     NoticeTab:Button({ Title = "🔗 复制脚本更新链接", Callback = function() if setclipboard then setclipboard("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"); Notify("已复制", "WindUI 加载链接已复制", 2) end end })
 
     -- 玩家功能
-local PlayerFuncTab = Window:Tab({ Title = "玩家功能", Icon = "zap" })
+    local PlayerFuncTab = Window:Tab({ Title = "玩家功能", Icon = "zap" })
 
--- 移动速度（滑块直接控制，循环应用）
-PlayerFuncTab:Slider({ Title = "移动速度", Value = { Min = 16, Max = 400, Default = 16 }, Increment = 1, Callback = function(v)
-    getgenv().CustomWalkSpeed = v
-end })
-task.spawn(function()
-    while true do
-        local char = LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum and hum.Parent then
-            hum.WalkSpeed = getgenv().CustomWalkSpeed or 16
+    -- 移动速度
+    PlayerFuncTab:Slider({ Title = "移动速度", Value = { Min = 16, Max = 400, Default = 16 }, Increment = 1, Callback = function(v)
+        getgenv().CustomWalkSpeed = v
+    end })
+    task.spawn(function()
+        while true do
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Parent then
+                hum.WalkSpeed = getgenv().CustomWalkSpeed or 16
+            end
+            task.wait(0.1)
         end
-        task.wait(0.1)
-    end
-end)
+    end)
 
--- 跳跃高度（滑块直接控制，循环应用）
-PlayerFuncTab:Slider({ Title = "跳跃高度", Value = { Min = 50, Max = 600, Default = 50 }, Increment = 1, Callback = function(v)
-    getgenv().CustomJumpPower = v
-end })
-task.spawn(function()
-    while true do
-        local char = LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum and hum.Parent then
-            hum.UseJumpPower = true
-            hum.JumpPower = getgenv().CustomJumpPower or 50
+    -- 跳跃高度
+    PlayerFuncTab:Slider({ Title = "跳跃高度", Value = { Min = 50, Max = 600, Default = 50 }, Increment = 1, Callback = function(v)
+        getgenv().CustomJumpPower = v
+    end })
+    task.spawn(function()
+        while true do
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Parent then
+                hum.UseJumpPower = true
+                hum.JumpPower = getgenv().CustomJumpPower or 50
+            end
+            task.wait(0.1)
         end
-        task.wait(0.1)
-    end
-end)
+    end)
 
--- 快速跑步（保留原逻辑，若不需要可删除）
-local FastRunSpeed = 50; local sudu = nil
-PlayerFuncTab:Toggle({ Title = "开启快速跑步", Default = false, Callback = function(enabled)
-    if enabled then if sudu then sudu:Disconnect() end; sudu = RunService.Heartbeat:Connect(function() local lp = LocalPlayer; if lp.Character and lp.Character:FindFirstChild("Humanoid") and lp.Character.Humanoid.MoveDirection.Magnitude > 0 then lp.Character:TranslateBy(lp.Character.Humanoid.MoveDirection * FastRunSpeed / 0.5) end end) else if sudu then sudu:Disconnect(); sudu = nil end end
-end })
-PlayerFuncTab:Input({ Title = "快速跑步强度", Placeholder = "50", Callback = function(text) local n = tonumber(text); if n then FastRunSpeed = math.clamp(n,0,200) end end })
+    -- 快速跑步
+    PlayerFuncTab:Toggle({ Title = "开启快速跑步", Default = false, Callback = function(enabled)
+        if enabled then if sudu then sudu:Disconnect() end; sudu = RunService.Heartbeat:Connect(function() local lp = LocalPlayer; if lp.Character and lp.Character:FindFirstChild("Humanoid") and lp.Character.Humanoid.MoveDirection.Magnitude > 0 then lp.Character:TranslateBy(lp.Character.Humanoid.MoveDirection * FastRunSpeed / 0.5) end end) else if sudu then sudu:Disconnect(); sudu = nil end end
+    end })
+    PlayerFuncTab:Input({ Title = "快速跑步强度", Placeholder = "50", Callback = function(text) local n = tonumber(text); if n then FastRunSpeed = math.clamp(n,0,200) end end })
 
--- 无限跳跃
-PlayerFuncTab:Toggle({ Title = "无限跳跃", Default = false, Callback = function(v) InfiniteJumpEnabled = v end })
+    -- 无限跳跃
+    PlayerFuncTab:Toggle({ Title = "无限跳跃", Default = false, Callback = function(v) InfiniteJumpEnabled = v end })
 
--- 自动拾取、自动重生保留原样...
-PlayerFuncTab:Toggle({ Title = "自动拾取", Default = false, Callback = function(v) AutoPickupEnabled = v; startPickupLoop() end })
-PlayerFuncTab:Slider({ Title = "拾取范围", Value = { Min = 5, Max = 50, Default = 10 }, Increment = 1, Callback = function(v) PickupRange = v end })
-PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = function(v) AutoRespawnEnabled = v end })
+    -- 自动拾取
+    PlayerFuncTab:Toggle({ Title = "自动拾取", Default = false, Callback = function(v) AutoPickupEnabled = v; startPickupLoop() end })
+    PlayerFuncTab:Slider({ Title = "拾取范围", Value = { Min = 5, Max = 50, Default = 10 }, Increment = 1, Callback = function(v) PickupRange = v end })
+    PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = function(v) AutoRespawnEnabled = v end })
 
     -- 通用
     local OtherTab = Window:Tab({ Title = "通用", Icon = "info" })
-    OtherTab:Button({ Title = "一键飞行(外部)", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/flyab.lua"))() end })
+    -- 飞行UI（已修复变量声明）
+    do
+        local speeds, nowe, tpwalking
+        local main = Instance.new("ScreenGui")
+        local Frame = Instance.new("Frame")
+        local up = Instance.new("TextButton")
+        local down = Instance.new("TextButton")
+        local onof = Instance.new("TextButton")
+        local TextLabel = Instance.new("TextLabel")
+        local plus = Instance.new("TextButton")
+        local speed = Instance.new("TextLabel")
+        local mine = Instance.new("TextButton")
+        local closebutton = Instance.new("TextButton")
+        local mini = Instance.new("TextButton")
+        local mini2 = Instance.new("TextButton")
+
+        main.Name = "main"
+        main.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+        main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        main.ResetOnSpawn = false
+
+        Frame.Parent = main
+        Frame.BackgroundColor3 = Color3.fromRGB(163, 255, 137)
+        Frame.BorderColor3 = Color3.fromRGB(103, 221, 213)
+        Frame.Position = UDim2.new(0.100320168, 0, 0.379746825, 0)
+        Frame.Size = UDim2.new(0, 190, 0, 57)
+
+        up.Name = "up"
+        up.Parent = Frame
+        up.BackgroundColor3 = Color3.fromRGB(79, 255, 152)
+        up.Size = UDim2.new(0, 44, 0, 28)
+        up.Font = Enum.Font.SourceSans
+        up.Text = "上升"
+        up.TextColor3 = Color3.fromRGB(0, 0, 0)
+        up.TextSize = 14.000
+
+        down.Name = "down"
+        down.Parent = Frame
+        down.BackgroundColor3 = Color3.fromRGB(215, 255, 121)
+        down.Position = UDim2.new(0, 0, 0.491228074, 0)
+        down.Size = UDim2.new(0, 44, 0, 28)
+        down.Font = Enum.Font.SourceSans
+        down.Text = "下降"
+        down.TextColor3 = Color3.fromRGB(0, 0, 0)
+        down.TextSize = 14.000
+
+        onof.Name = "onof"
+        onof.Parent = Frame
+        onof.BackgroundColor3 = Color3.fromRGB(255, 249, 74)
+        onof.Position = UDim2.new(0.702823281, 0, 0.491228074, 0)
+        onof.Size = UDim2.new(0, 56, 0, 28)
+        onof.Font = Enum.Font.SourceSans
+        onof.Text = "飞行"
+        onof.TextColor3 = Color3.fromRGB(0, 0, 0)
+        onof.TextSize = 14.000
+
+        TextLabel.Parent = Frame
+        TextLabel.BackgroundColor3 = Color3.fromRGB(242, 60, 255)
+        TextLabel.Position = UDim2.new(0.469327301, 0, 0, 0)
+        TextLabel.Size = UDim2.new(0, 100, 0, 28)
+        TextLabel.Font = Enum.Font.SourceSans
+        TextLabel.Text = "妥协飞行v3"
+        TextLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+        TextLabel.TextScaled = true
+        TextLabel.TextSize = 14.000
+        TextLabel.TextWrapped = true
+
+        plus.Name = "plus"
+        plus.Parent = Frame
+        plus.BackgroundColor3 = Color3.fromRGB(133, 145, 255)
+        plus.Position = UDim2.new(0.231578946, 0, 0, 0)
+        plus.Size = UDim2.new(0, 45, 0, 28)
+        plus.Font = Enum.Font.SourceSans
+        plus.Text = "+"
+        plus.TextColor3 = Color3.fromRGB(0, 0, 0)
+        plus.TextScaled = true
+        plus.TextSize = 14.000
+        plus.TextWrapped = true
+
+        speed.Name = "speed"
+        speed.Parent = Frame
+        speed.BackgroundColor3 = Color3.fromRGB(255, 85, 0)
+        speed.Position = UDim2.new(0.468421042, 0, 0.491228074, 0)
+        speed.Size = UDim2.new(0, 44, 0, 28)
+        speed.Font = Enum.Font.SourceSans
+        speed.Text = "1"
+        speed.TextColor3 = Color3.fromRGB(0, 0, 0)
+        speed.TextScaled = true
+        speed.TextSize = 14.000
+        speed.TextWrapped = true
+
+        mine.Name = "mine"
+        mine.Parent = Frame
+        mine.BackgroundColor3 = Color3.fromRGB(123, 255, 247)
+        mine.Position = UDim2.new(0.231578946, 0, 0.491228074, 0)
+        mine.Size = UDim2.new(0, 45, 0, 29)
+        mine.Font = Enum.Font.SourceSans
+        mine.Text = "-"
+        mine.TextColor3 = Color3.fromRGB(0, 0, 0)
+        mine.TextScaled = true
+        mine.TextSize = 14.000
+        mine.TextWrapped = true
+
+        closebutton.Name = "关闭"
+        closebutton.Parent = main.Frame
+        closebutton.BackgroundColor3 = Color3.fromRGB(225, 25, 0)
+        closebutton.Font = "SourceSans"
+        closebutton.Size = UDim2.new(0, 45, 0, 28)
+        closebutton.Text = "X"
+        closebutton.TextSize = 30
+        closebutton.Position = UDim2.new(0, 0, -1, 27)
+
+        mini.Name = "最小化"
+        mini.Parent = main.Frame
+        mini.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+        mini.Font = "SourceSans"
+        mini.Size = UDim2.new(0, 45, 0, 28)
+        mini.Text = "T"
+        mini.TextSize = 30
+        mini.Position = UDim2.new(0, 44, -1, 27)
+
+        mini2.Name = "最小化2"
+        mini2.Parent = main.Frame
+        mini2.BackgroundColor3 = Color3.fromRGB(192, 150, 230)
+        mini2.Font = "SourceSans"
+        mini2.Size = UDim2.new(0, 45, 0, 28)
+        mini2.Text = "T"
+        mini2.TextSize = 30
+        mini2.Position = UDim2.new(0, 44, -1, 57)
+        mini2.Visible = false
+
+        speeds = 1
+        nowe = false
+        tpwalking = false
+
+        local speaker = game:GetService("Players").LocalPlayer
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "妥协飞行";
+            Text = "注入成功";
+            Icon = "rbxthumb://type=Asset&id=5107182114&w=150&h=150";
+            Duration = 5;
+        })
+
+        Frame.Active = true
+        Frame.Draggable = true
+
+        onof.MouseButton1Down:connect(function()
+            if nowe == true then
+                nowe = false
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,true)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,true)
+                speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+            else
+                nowe = true
+                for i = 1, speeds do
+                    spawn(function()
+                        local hb = game:GetService("RunService").Heartbeat
+                        tpwalking = true
+                        local chr = game.Players.LocalPlayer.Character
+                        local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                        while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                            if hum.MoveDirection.Magnitude > 0 then
+                                chr:TranslateBy(hum.MoveDirection)
+                            end
+                        end
+                    end)
+                end
+                game.Players.LocalPlayer.Character.Animate.Disabled = true
+                local Char = game.Players.LocalPlayer.Character
+                local Hum = Char:FindFirstChildOfClass("Humanoid") or Char:FindFirstChildOfClass("AnimationController")
+                for i,v in next, Hum:GetPlayingAnimationTracks() do
+                    v:AdjustSpeed(0)
+                end
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,false)
+                speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
+                speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+            end
+
+            if game:GetService("Players").LocalPlayer.Character:FindFirstChildOfClass("Humanoid").RigType == Enum.HumanoidRigType.R6 then
+                local plr = game.Players.LocalPlayer
+                local torso = plr.Character.Torso
+                local ctrl = {f = 0, b = 0, l = 0, r = 0}
+                local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+                local maxspeed = 50
+                local speed = 0
+                local bg = Instance.new("BodyGyro", torso)
+                bg.P = 9e4
+                bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+                bg.cframe = torso.CFrame
+                local bv = Instance.new("BodyVelocity", torso)
+                bv.velocity = Vector3.new(0,0.1,0)
+                bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+                if nowe == true then
+                    plr.Character.Humanoid.PlatformStand = true
+                end
+                while nowe == true or game:GetService("Players").LocalPlayer.Character.Humanoid.Health == 0 do
+                    game:GetService("RunService").RenderStepped:Wait()
+                    if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                        speed = speed+.5+(speed/maxspeed)
+                        if speed > maxspeed then speed = maxspeed end
+                    elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
+                        speed = speed-1
+                        if speed < 0 then speed = 0 end
+                    end
+                    if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                        bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f+ctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                        lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+                    elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+                        bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                    else
+                        bv.velocity = Vector3.new(0,0,0)
+                    end
+                    bg.cframe = game.Workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*speed/maxspeed),0,0)
+                end
+                ctrl = {f = 0, b = 0, l = 0, r = 0}
+                lastctrl = {f = 0, b = 0, l = 0, r = 0}
+                speed = 0
+                bg:Destroy()
+                bv:Destroy()
+                plr.Character.Humanoid.PlatformStand = false
+                game.Players.LocalPlayer.Character.Animate.Disabled = false
+                tpwalking = false
+            else
+                local plr = game.Players.LocalPlayer
+                local UpperTorso = plr.Character.UpperTorso
+                local ctrl = {f = 0, b = 0, l = 0, r = 0}
+                local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+                local maxspeed = 50
+                local speed = 0
+                local bg = Instance.new("BodyGyro", UpperTorso)
+                bg.P = 9e4
+                bg.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+                bg.cframe = UpperTorso.CFrame
+                local bv = Instance.new("BodyVelocity", UpperTorso)
+                bv.velocity = Vector3.new(0,0.1,0)
+                bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+                if nowe == true then
+                    plr.Character.Humanoid.PlatformStand = true
+                end
+                while nowe == true or game:GetService("Players").LocalPlayer.Character.Humanoid.Health == 0 do
+                    wait()
+                    if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                        speed = speed+.5+(speed/maxspeed)
+                        if speed > maxspeed then speed = maxspeed end
+                    elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and speed ~= 0 then
+                        speed = speed-1
+                        if speed < 0 then speed = 0 end
+                    end
+                    if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                        bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (ctrl.f+ctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                        lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+                    elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+                        bv.velocity = ((game.Workspace.CurrentCamera.CoordinateFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((game.Workspace.CurrentCamera.CoordinateFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - game.Workspace.CurrentCamera.CoordinateFrame.p))*speed
+                    else
+                        bv.velocity = Vector3.new(0,0,0)
+                    end
+                    bg.cframe = game.Workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*speed/maxspeed),0,0)
+                end
+                ctrl = {f = 0, b = 0, l = 0, r = 0}
+                lastctrl = {f = 0, b = 0, l = 0, r = 0}
+                speed = 0
+                bg:Destroy()
+                bv:Destroy()
+                plr.Character.Humanoid.PlatformStand = false
+                game.Players.LocalPlayer.Character.Animate.Disabled = false
+                tpwalking = false
+            end
+        end)
+
+        local tis
+        up.MouseButton1Down:connect(function()
+            tis = up.MouseEnter:connect(function()
+                while tis do
+                    wait()
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,1,0)
+                end
+            end)
+        end)
+        up.MouseLeave:connect(function()
+            if tis then tis:Disconnect(); tis = nil end
+        end)
+
+        local dis
+        down.MouseButton1Down:connect(function()
+            dis = down.MouseEnter:connect(function()
+                while dis do
+                    wait()
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0,-1,0)
+                end
+            end)
+        end)
+        down.MouseLeave:connect(function()
+            if dis then dis:Disconnect(); dis = nil end
+        end)
+
+        game:GetService("Players").LocalPlayer.CharacterAdded:Connect(function(char)
+            wait(0.7)
+            game.Players.LocalPlayer.Character.Humanoid.PlatformStand = false
+            game.Players.LocalPlayer.Character.Animate.Disabled = false
+        end)
+
+        plus.MouseButton1Down:connect(function()
+            speeds = speeds + 1
+            speed.Text = speeds
+            if nowe == true then
+                tpwalking = false
+                for i = 1, speeds do
+                    spawn(function()
+                        local hb = game:GetService("RunService").Heartbeat
+                        tpwalking = true
+                        local chr = game.Players.LocalPlayer.Character
+                        local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                        while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                            if hum.MoveDirection.Magnitude > 0 then
+                                chr:TranslateBy(hum.MoveDirection)
+                            end
+                        end
+                    end)
+                end
+            end
+        end)
+        mine.MouseButton1Down:connect(function()
+            if speeds == 1 then
+                speed.Text = 'flyno1'
+                wait(1)
+                speed.Text = speeds
+            else
+                speeds = speeds - 1
+                speed.Text = speeds
+                if nowe == true then
+                    tpwalking = false
+                    for i = 1, speeds do
+                        spawn(function()
+                            local hb = game:GetService("RunService").Heartbeat
+                            tpwalking = true
+                            local chr = game.Players.LocalPlayer.Character
+                            local hum = chr and chr:FindFirstChildWhichIsA("Humanoid")
+                            while tpwalking and hb:Wait() and chr and hum and hum.Parent do
+                                if hum.MoveDirection.Magnitude > 0 then
+                                    chr:TranslateBy(hum.MoveDirection)
+                                end
+                            end
+                        end)
+                    end
+                end
+            end
+        end)
+
+        closebutton.MouseButton1Click:Connect(function()
+            main:Destroy()
+        end)
+
+        mini.MouseButton1Click:Connect(function()
+            up.Visible = false
+            down.Visible = false
+            onof.Visible = false
+            plus.Visible = false
+            speed.Visible = false
+            mine.Visible = false
+            mini.Visible = false
+            mini2.Visible = true
+            main.Frame.BackgroundTransparency = 1
+            closebutton.Position = UDim2.new(0, 0, -1, 57)
+        end)
+
+        mini2.MouseButton1Click:Connect(function()
+            up.Visible = true
+            down.Visible = true
+            onof.Visible = true
+            plus.Visible = true
+            speed.Visible = true
+            mine.Visible = true
+            mini.Visible = true
+            mini2.Visible = false
+            main.Frame.BackgroundTransparency = 0
+            closebutton.Position = UDim2.new(0, 0, -1, 27)
+        end)
+    end
+
     OtherTab:Button({ Title = "祖国人汉化", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/kongbaNB/-/refs/heads/main/祖国人汉化"))() end })
     OtherTab:Button({ Title = "枪械飞行", Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/ylt410/roblox-Script/refs/heads/main/fly"))() end })
     OtherTab:Toggle({ Title = "穿墙", Default = false, Callback = function(enabled)
@@ -1227,259 +1629,17 @@ PlayerFuncTab:Toggle({ Title = "自动重生", Default = false, Callback = funct
         end
     })
     GameTab:Button({
-    Title = "+一速度键盘",
-    Callback = function()
-        loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/359e97f8618e9008afe5f496184ebb7c.lua"))()
-    end
-})
--- 忍者传奇辅助按钮
-GameTab:Button({
-    Title = "忍者传奇",
-    Callback = function()
-        -- 创建一个独立的忍者传奇辅助窗口
-        local NinjaWindow = WindUI:CreateWindow({
-            Title = "忍者传奇",
-            Icon = "sword",
-            Size = UDim2.fromOffset(500, 400),
-            Theme = "Dark",
-            Resizable = true,
-            Background = "https://i.ibb.co/KzpGVsQR/153941.png",
-            BackgroundImageTransparency = 0.5,
-        })
-
-        -- 主题切换（同款月亮按钮）
-        NinjaWindow:CreateTopbarButton("ThemeToggle", "moon", function()
-            local ct = WindUI:GetCurrentTheme()
-            if ct == "Dark" then
-                pcall(function()
-                    WindUI:AddTheme({
-                        Name = "LightTransparent",
-                        Background = Color3.fromRGB(240,240,245),
-                        WindowBackground = Color3.fromRGB(255,255,255),
-                        Text = Color3.fromRGB(20,20,25),
-                        Icon = Color3.fromRGB(120,120,130),
-                        Button = Color3.fromRGB(180,180,190),
-                        Hover = Color3.fromRGB(255,255,255),
-                        Placeholder = Color3.fromRGB(150,150,160),
-                        Outline = Color3.fromRGB(200,200,210),
-                        TabTitle = Color3.fromRGB(20,20,25),
-                        TabIcon = Color3.fromRGB(120,120,130),
-                        ElementTitle = Color3.fromRGB(20,20,25),
-                        ElementDesc = Color3.fromRGB(120,120,130),
-                        ElementBackground = Color3.fromRGB(220,220,225),
-                        Toggle = Color3.fromRGB(180,180,190),
-                        ToggleBar = Color3.fromRGB(255,255,255),
-                        Slider = Color3.fromRGB(180,180,190),
-                        SliderThumb = Color3.fromRGB(255,255,255),
-                        Checkbox = Color3.fromRGB(180,180,190),
-                        CheckboxIcon = Color3.fromRGB(255,255,255),
-                        Accent = WindUI:Gradient({
-                            ["0"] = { Color = Color3.fromRGB(200,180,255), Transparency = 0.5 },
-                            ["100"] = { Color = Color3.fromRGB(140,120,200), Transparency = 0.5 },
-                        }),
-                    })
-                end)
-                WindUI:SetTheme("LightTransparent")
-                if NinjaWindow and NinjaWindow.UIElements and NinjaWindow.UIElements.Main then
-                    NinjaWindow.UIElements.Main.BackgroundTransparency = 0.6
-                end
-                WindUI:Notify({ Title = "主题切换", Content = "亮色半透明模式", Duration = 2 })
-            else
-                WindUI:SetTheme("Dark")
-                WindUI:Notify({ Title = "主题切换", Content = "暗色模式", Duration = 2 })
-            end
-        end, 990)
-
-        -- 主要功能 Tab
-        local NinjaTab = NinjaWindow:Tab({ Title = "主要功能", Icon = "zap" })
-
-        local ranks = {"Student", "Genin", "Chunin", "Jonin", "Anbu", "Kage", "Legendary", "Mythical", "Eternal", "Divine"}
-
-        -- 自动挥舞
-        NinjaTab:Toggle({
-            Title = "自动挥舞", Default = false,
-            Callback = function(enabled)
-                getgenv().autoswing = enabled
-                if enabled then
-                    task.spawn(function()
-                        while getgenv().autoswing do
-                            pcall(function()
-                                local player = Players.LocalPlayer
-                                for _, tool in pairs(player.Backpack:GetChildren()) do
-                                    if tool:FindFirstChild("ninjitsuGain") then
-                                        local char = player.Character
-                                        local hum = char and char:FindFirstChildOfClass("Humanoid")
-                                        if hum and hum.Parent then hum:EquipTool(tool) end
-                                        break
-                                    end
-                                end
-                                local ninjaEvent = player:FindFirstChild("ninjaEvent")
-                                if ninjaEvent then ninjaEvent:FireServer("swingKatana") end
-                            end)
-                            task.wait(0.5)
-                        end
-                    end)
-                else
-                    getgenv().autoswing = false
-                end
-            end
-        })
-
-        -- 自动售卖
-        NinjaTab:Toggle({
-            Title = "自动售卖", Default = false,
-            Callback = function(enabled)
-                getgenv().autosell = enabled
-                if enabled then
-                    task.spawn(function()
-                        while getgenv().autosell do
-                            pcall(function()
-                                local sellPart = Workspace.sellAreaCircles.sellAreaCircle16.circleInner
-                                local root = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                                if sellPart and root then
-                                    sellPart.CFrame = root.CFrame
-                                    task.wait(0.1)
-                                    sellPart.CFrame = CFrame.new(0, 0, 0)
-                                    task.wait(0.1)
-                                end
-                            end)
-                            task.wait()
-                        end
-                    end)
-                end
-            end
-        })
-
-        -- 自动购买排名
-        NinjaTab:Toggle({
-            Title = "自动购买排名", Default = false,
-            Callback = function(enabled)
-                getgenv().autobuyranks = enabled
-                if enabled then
-                    task.spawn(function()
-                        while getgenv().autobuyranks do
-                            pcall(function()
-                                for _, rank in ipairs(ranks) do
-                                    Players.LocalPlayer.ninjaEvent:FireServer("buyRank", rank)
-                                end
-                            end)
-                            task.wait(0.5)
-                        end
-                    end)
-                end
-            end
-        })
-
-        -- 自动购买腰带
-        NinjaTab:Toggle({
-            Title = "自动购买腰带", Default = false,
-            Callback = function(enabled)
-                getgenv().autobuybelts = enabled
-                if enabled then
-                    task.spawn(function()
-                        while getgenv().autobuybelts do
-                            pcall(function()
-                                Players.LocalPlayer.ninjaEvent:FireServer("buyAllBelts", "Inner Peace Island")
-                            end)
-                            task.wait(0.5)
-                        end
-                    end)
-                end
-            end
-        })
-
-        -- 自动购买技能
-        NinjaTab:Toggle({
-            Title = "自动购买技能", Default = false,
-            Callback = function(enabled)
-                getgenv().autobuyskills = enabled
-                if enabled then
-                    task.spawn(function()
-                        while getgenv().autobuyskills do
-                            pcall(function()
-                                Players.LocalPlayer.ninjaEvent:FireServer("buyAllSkills", "Inner Peace Island")
-                            end)
-                            task.wait(0.5)
-                        end
-                    end)
-                end
-            end
-        })
-
-        -- 自动购买剑
-        NinjaTab:Toggle({
-            Title = "自动购买剑", Default = false,
-            Callback = function(enabled)
-                getgenv().autobuy = enabled
-                if enabled then
-                    task.spawn(function()
-                        while getgenv().autobuy do
-                            pcall(function()
-                                Players.LocalPlayer.ninjaEvent:FireServer("buyAllSwords", "Inner Peace Island")
-                            end)
-                            task.wait(0.5)
-                        end
-                    end)
-                end
-            end
-        })
-
-        -- 解锁所有岛
-        NinjaTab:Button({
-            Title = "解锁所有岛",
-            Callback = function()
-                for _, islandPart in ipairs(Workspace.islandUnlockParts:GetChildren()) do
-                    if islandPart and islandPart:FindFirstChild("islandSignPart") then
-                        local root = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                        if root then
-                            root.CFrame = islandPart.islandSignPart.CFrame
-                            task.wait(0.5)
-                        end
-                    end
-                end
-            end
-        })
-
-        -- 传送点
-        NinjaTab:Paragraph({ Title = "传送功能", Desc = "" })
-        local teleportList = {
-            {"出生点", CFrame.new(25.67, 3.42, 29.92)},
-            {"附魔岛", CFrame.new(51.17, 766.18, -138.45)},
-            {"神秘岛", CFrame.new(171.97, 4047.38, 42.07)},
-            {"太空岛", CFrame.new(148.84, 5657.19, 73.50)},
-            {"冻土岛", CFrame.new(139.28, 9285.18, 77.36)},
-            {"永恒岛", CFrame.new(149.35, 13680.04, 73.39)},
-            {"沙暴岛", CFrame.new(133.37, 17686.33, 72.00)},
-            {"雷暴岛", CFrame.new(143.19, 24070.02, 78.05)},
-            {"远古炼狱岛", CFrame.new(141.27, 28256.29, 69.38)},
-            {"午夜暗影岛", CFrame.new(132.74, 33206.98, 57.50)},
-            {"神秘灵魂岛", CFrame.new(137.76, 39317.57, 61.07)},
-            {"冬季奇迹岛", CFrame.new(137.27, 46010.55, 55.94)},
-            {"黄金大师岛", CFrame.new(128.32, 52607.77, 56.69)},
-            {"龙传奇岛", CFrame.new(146.35, 59594.68, 77.53)},
-            {"赛博传奇岛", CFrame.new(137.33, 66669.16, 72.22)},
-            {"天岚超能岛", CFrame.new(135.48, 70271.16, 57.02)},
-            {"混沌传奇岛", CFrame.new(148.59, 74442.85, 69.32)},
-            {"灵魂融合岛", CFrame.new(136.97, 79746.98, 58.54)},
-            {"黑暗元素岛", CFrame.new(141.70, 83198.98, 72.73)},
-            {"内心和平岛", CFrame.new(135.32, 87051.06, 66.78)},
-            {"炽烈漩涡岛", CFrame.new(135.08, 91246.07, 69.57)},
-            {"35倍金币区域", CFrame.new(86.29, 91245.77, 120.54)},
-            {"死亡宠物", CFrame.new(4593.21, 130.87, 1430.22)},
-        }
-        for _, data in ipairs(teleportList) do
-            NinjaTab:Button({
-                Title = "传送到" .. data[1],
-                Callback = function()
-                    local root = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    if root then root.CFrame = data[2] end
-                end
-            })
+        Title = "+一速度键盘",
+        Callback = function()
+            loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/359e97f8618e9008afe5f496184ebb7c.lua"))()
         end
-
-        WindUI:Notify({ Title = "忍者传奇", Content = "辅助窗口已开启", Duration = 2 })
-    end
-})
+    })
+    GameTab:Button({
+        Title = "忍者传奇",
+        Callback = function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/zzx889/88888/refs/heads/main/%E5%A6%A5%E5%8D%8F%E8%84%9A%E6%9C%AC.txt"))()
+        end
+    })
 
     -- 脚本中心
     local ScriptCenterTab = Window:Tab({ Title = "脚本中心", Icon = "file-text" })
@@ -1506,7 +1666,7 @@ GameTab:Button({
         end
     })
 
-    -- 翻译功能
+    -- 翻译功能（已修复HTTP调用）
     Translator.detectLanguage = function(text)
         if not text or #text == 0 then return "en" end
         local counts = { cjk = 0, zht = 0, ko = 0, ja = 0, en = 0 }
@@ -1541,7 +1701,7 @@ GameTab:Button({
             "https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=%s",
             fromLang, toLang, HttpService:UrlEncode(text)
         )
-        local ok, body = pcall(game.HttpGet, game, url, false, {["User-Agent"] = "Mozilla/5.0"})
+        local ok, body = pcall(function() return game:HttpGet(url) end)
         if not ok or not body then return nil end
         local s, data = pcall(HttpService.JSONDecode, HttpService, body)
         if not s or not data or not data[1] then return nil end
@@ -1556,7 +1716,7 @@ GameTab:Button({
             "https://api.mymemory.translated.net/get?q=%s&langpair=%s|%s",
             HttpService:UrlEncode(text), fromLang, toLang
         )
-        local ok, body = pcall(game.HttpGet, game, url, false, {["User-Agent"] = "Roblox"})
+        local ok, body = pcall(function() return game:HttpGet(url) end)
         if not ok or not body then return nil end
         local s, data = pcall(HttpService.JSONDecode, HttpService, body)
         if not s or not data or not data.responseData then return nil end
@@ -1674,91 +1834,132 @@ GameTab:Button({
     StopTab:Button({ Title = "强制退出", Callback = function() pcall(function() game:Shutdown() end) end })
     StopTab:Button({ Title = "自杀", Callback = function() local c = LocalPlayer.Character; if c and c:FindFirstChildOfClass("Humanoid") then c.Humanoid.Health = 0 end end })
 
-   -- 配置（含主题切换）
-local ConfigTab = Window:Tab({ Title = "配置", Icon = "settings" })
-ConfigTab:Toggle({ Title = "管理员检测", Default = true, Callback = function(v) AdminDetectEnabled = v end })
-ConfigTab:Button({ Title = "重新进入服务器", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
-ConfigTab:Toggle({ Title = "反挂机", Default = false, Callback = function(v) AntiAFKEnabled = v; startAntiAFK() end })
-ConfigTab:Button({ Title = "导出配置", Callback = exportConfig })
-ConfigTab:Button({ Title = "导入配置", Callback = importConfig })
-ConfigTab:Toggle({ Title = "崩溃保护", Default = true, Callback = function(v) CrashProtectionEnabled = v end })
+    -- 配置（含主题切换）
+    local ConfigTab = Window:Tab({ Title = "配置", Icon = "settings" })
+    ConfigTab:Toggle({ Title = "管理员检测", Default = true, Callback = function(v) AdminDetectEnabled = v end })
+    ConfigTab:Button({ Title = "重新进入服务器", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end })
+    ConfigTab:Toggle({ Title = "反挂机", Default = false, Callback = function(v) AntiAFKEnabled = v; startAntiAFK() end })
+    ConfigTab:Button({ Title = "导出配置", Callback = exportConfig })
+    ConfigTab:Button({ Title = "导入配置", Callback = importConfig })
+    ConfigTab:Toggle({ Title = "崩溃保护", Default = true, Callback = function(v) CrashProtectionEnabled = v end })
 
-local ThemeList = {}
-pcall(function() ThemeList = WindUI:GetThemes() end)
-local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
-for _, v in ipairs(CustomThemes) do if not table.find(ThemeList, v) then table.insert(ThemeList, v) end end
-local NewList = {"Dark"}
-for _, v in ipairs(ThemeList) do if v ~= "Dark" then table.insert(NewList, v) end end
-ThemeList = NewList
+    local ThemeList = {}
+    pcall(function() ThemeList = WindUI:GetThemes() end)
+    local CustomThemes = {"Aurora", "Cyan", "Blue", "BlackGold"}
+    for _, v in ipairs(CustomThemes) do if not table.find(ThemeList, v) then table.insert(ThemeList, v) end end
+    local NewList = {"Dark"}
+    for _, v in ipairs(ThemeList) do if v ~= "Dark" then table.insert(NewList, v) end end
+    ThemeList = NewList
 
-ConfigTab:Dropdown({
-    Title = "UI主题", Values = ThemeList, Default = CurrentTheme,
-    Callback = function(v)
-        CurrentTheme = v
-        pcall(function() WindUI:SetTheme(v) end)
-        pcall(function() if writefile then writefile(ThemeFile, v) end end)
-        Notify("主题切换", "已切换为 "..tostring(v), 2, "success")
+    ConfigTab:Dropdown({
+        Title = "UI主题", Values = ThemeList, Default = CurrentTheme,
+        Callback = function(v)
+            CurrentTheme = v
+            pcall(function() WindUI:SetTheme(v) end)
+            pcall(function() if writefile then writefile(ThemeFile, v) end end)
+            Notify("主题切换", "已切换为 "..tostring(v), 2, "success")
+        end
+    })
+
+    -- 关闭脚本按钮
+    ConfigTab:Button({
+        Title = "关闭脚本",
+        Callback = function()
+            pcall(function() game:Shutdown() end)
+        end
+    })
+
+    -- 彩虹渐变签名开关
+    ConfigTab:Toggle({
+        Title = "彩虹签名",
+        Default = false,
+        Callback = function(state)
+            if state then
+                local gui = Instance.new("ScreenGui", CoreGui)
+                gui.Name = "RainbowSignature"
+                local label = Instance.new("TextLabel", gui)
+                label.Size = UDim2.new(0, 300, 0, 30)
+                label.Position = UDim2.new(0, 10, 0, 10)
+                label.BackgroundTransparency = 1
+                label.Text = "尊贵的妥协 Hub 用户: " .. LocalPlayer.DisplayName
+                label.Font = Enum.Font.SourceSansBold
+                label.TextSize = 18
+                local grad = Instance.new("UIGradient", label)
+                grad.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
+                    ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255,255,0)),
+                    ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0,255,0)),
+                    ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0,255,255)),
+                    ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0,0,255)),
+                    ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,255))
+                })
+                task.spawn(function()
+                    local angle = 0
+                    while gui.Parent do
+                        angle = (angle + 1) % 360
+                        grad.Rotation = angle
+                        task.wait(0.05)
+                    end
+                end)
+            else
+                local gui = CoreGui:FindFirstChild("RainbowSignature")
+                if gui then gui:Destroy() end
+            end
+        end
+    })
+
+    -- ==================== 音乐播放器（内置歌曲库） ====================
+    local MusicTab = Window:Tab({ Title = "音乐播放器", Icon = "music" })
+
+    local MusicLibrary = {
+        {name = "1", id = "137717310854691"},
+        {name = "2", id = "108483365019009"},
+        {name = "1", id = "86872598969817"},
+        {name = "1", id = "129298531684969"},
+        {name = "1", id = "90521568613709"},
+        {name = "1", id = "117849057341843"},
+        {name = "1", id = "137776892155127"},
+        {name = "1", id = "106711954990826"},
+        {name = "1", id = "101737681136614"},
+        {name = "1", id = "134786908423441"},
+        {name = "2", id = "1845918435"},
+        {name = "2", id = "119719716898695"},
+        {name = "2", id = "99590355252943"},
+        {name = "钢琴曲2", id = "119719716898695"},
+        {name = "没有2", id = ""},
+        {name = "没有2", id = ""},
+        {name = "没有2", id = ""},
+        {name = "没有2", id = ""},
+        {name = "没有2", id = ""},
+        {name = "没有2", id = ""},
+    }
+
+    local currentSongName = ""
+
+    local function CreateSound()
+        if musicSound and musicSound.Parent then
+            pcall(function() musicSound:Destroy() end)
+        end
+        musicSound = Instance.new("Sound", Workspace)
+        musicSound.Volume = musicVolume
     end
-})
 
--- 关闭脚本按钮
-ConfigTab:Button({
-    Title = "关闭脚本",
-    Callback = function()
-        pcall(function() game:Shutdown() end)
-    end
-})
-
--- 彩虹渐变签名开关
-ConfigTab:Toggle({
-    Title = "彩虹签名",
-    Default = false,
-    Callback = function(state)
-        if state then
-            local gui = Instance.new("ScreenGui", CoreGui)
-            gui.Name = "RainbowSignature"
-            local label = Instance.new("TextLabel", gui)
-            label.Size = UDim2.new(0, 300, 0, 30)
-            label.Position = UDim2.new(0, 10, 0, 10)
-            label.BackgroundTransparency = 1
-            label.Text = "尊贵的妥协 Hub 用户: " .. LocalPlayer.DisplayName
-            label.Font = Enum.Font.SourceSansBold
-            label.TextSize = 18
-            local grad = Instance.new("UIGradient", label)
-            grad.Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),
-                ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255,255,0)),
-                ColorSequenceKeypoint.new(0.4, Color3.fromRGB(0,255,0)),
-                ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0,255,255)),
-                ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0,0,255)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(255,0,255))
-            })
-            task.spawn(function()
-                local angle = 0
-                while gui.Parent do
-                    angle = (angle + 1) % 360
-                    grad.Rotation = angle
-                    task.wait(0.05)
-                end
-            end)
-        else
-            local gui = CoreGui:FindFirstChild("RainbowSignature")
-            if gui then gui:Destroy() end
+    local function StopMusic()
+        if musicSound then
+            pcall(function() musicSound:Stop() end)
+        end
+        if musicLoopConnection then
+            musicLoopConnection:Disconnect()
+            musicLoopConnection = nil
         end
     end
-})
 
-    -- 音乐播放器
-    local MusicTab = Window:Tab({ Title = "音乐播放器", Icon = "music" })
-    local function CreateSound() if musicSound and musicSound.Parent then musicSound:Destroy() end; musicSound = Instance.new("Sound", Workspace); musicSound.Volume = musicVolume end
-    local function StopMusic()
-        if musicSound then musicSound:Stop() end
-        if musicLoopConnection then musicLoopConnection:Disconnect(); musicLoopConnection = nil end
-    end
-    local function PlayMusic(id)
+    local function PlaySong(song)
         StopMusic()
         CreateSound()
-        musicSound.SoundId = "rbxassetid://" .. id
+        musicSound.SoundId = "rbxassetid://" .. song.id
+        musicSound:Play()
+
         if loopEnabled then
             musicLoopConnection = musicSound.Ended:Connect(function()
                 if loopEnabled and musicSound then
@@ -1766,29 +1967,76 @@ ConfigTab:Toggle({
                 end
             end)
         end
-        musicSound:Play()
+        currentSongName = song.name
+        Notify("正在播放", song.name, 2, "music")
     end
-    MusicTab:Input({ Title = "音乐ID", Placeholder = "输入 Roblox 音频资产ID", Callback = function(id) if id and id ~= "" then PlayMusic(id) end end })
-    MusicTab:Slider({ Title = "音量", Value = { Min = 0, Max = 1000, Default = 50 }, Increment = 1, Callback = function(value)
-        musicVolume = value / 100
-        if musicSound then
-            musicSound.Volume = math.clamp(musicVolume, 0, 10)
-        end
-    end })
-    MusicTab:Toggle({ Title = "循环播放", Default = false, Callback = function(state)
-        loopEnabled = state
-        if musicSound and musicSound.IsPlaying then
-            if musicLoopConnection then musicLoopConnection:Disconnect(); musicLoopConnection = nil end
-            if loopEnabled then
-                musicLoopConnection = musicSound.Ended:Connect(function()
-                    if loopEnabled and musicSound then
-                        musicSound:Play()
+
+    local songNames = {}
+    for _, song in ipairs(MusicLibrary) do
+        table.insert(songNames, song.name)
+    end
+
+    MusicTab:Dropdown({
+        Title = "🎵 选择歌曲",
+        Values = songNames,
+        Default = "",
+        Callback = function(selected)
+            if selected and selected ~= "" then
+                for _, song in ipairs(MusicLibrary) do
+                    if song.name == selected then
+                        PlaySong(song)
+                        break
                     end
-                end)
+                end
             end
         end
-    end })
-    MusicTab:Button({ Title = "⏹ 停止播放", Callback = function() StopMusic() end })
+    })
+
+    MusicTab:Slider({
+        Title = "🔊 音量",
+        Value = { Min = 0, Max = 1000, Default = 500 },
+        Increment = 1,
+        Callback = function(value)
+            musicVolume = value / 1000
+            if musicSound then
+                musicSound.Volume = math.clamp(musicVolume, 0, 10)
+            end
+        end
+    })
+
+    MusicTab:Toggle({
+        Title = "🔁 循环播放",
+        Default = false,
+        Callback = function(state)
+            loopEnabled = state
+            if musicSound and musicSound.IsPlaying then
+                if musicLoopConnection then
+                    musicLoopConnection:Disconnect()
+                    musicLoopConnection = nil
+                end
+                if state then
+                    musicLoopConnection = musicSound.Ended:Connect(function()
+                        if loopEnabled and musicSound then
+                            musicSound:Play()
+                        end
+                    end)
+                end
+            end
+        end
+    })
+
+    MusicTab:Button({
+        Title = "⏹ 停止播放",
+        Callback = function()
+            StopMusic()
+            if musicSound then
+                musicSound:Destroy()
+                musicSound = nil
+            end
+            currentSongName = ""
+            Notify("音乐已停止", "", 1, "info")
+        end
+    })
 
     -- 娱乐
     local FunTab = Window:Tab({ Title = "娱乐", Icon = "smile" })
@@ -1816,9 +2064,19 @@ ConfigTab:Toggle({
     FunTab:Slider({ Title = "体型Y", Value = { Min=0.5, Max=5, Default=1 }, Increment=0.1, Callback = function(v) MorphSize = Vector3.new(MorphSize.X, v, MorphSize.Z); applyMorph() end })
     FunTab:Slider({ Title = "体型Z", Value = { Min=0.5, Max=5, Default=1 }, Increment=0.1, Callback = function(v) MorphSize = Vector3.new(MorphSize.X, MorphSize.Y, v); applyMorph() end })
 
+    -- 无限跳跃实现
+    UserInputService.JumpRequest:Connect(function()
+        if InfiniteJumpEnabled and LocalPlayer.Character then
+            local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum:GetState() ~= Enum.HumanoidStateType.Dead then
+                hum:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end)
+
     -- ==================== 流光彩虹边框 ====================
     task.wait(0.3)
-    local Main = Window.UIElements and Window.UIElements.Main
+    local Main = Window.UIElements and Window.UIElements.Main or nil
     if Main then
         for _, v in ipairs(Main:GetDescendants()) do
             if v:IsA("UIStroke") and v.Name == "RainbowBorder" then v:Destroy() end
@@ -1866,10 +2124,13 @@ ConfigTab:Toggle({
             Color3.fromRGB(0,255,0), Color3.fromRGB(0,0,255), Color3.fromRGB(75,0,130), Color3.fromRGB(143,0,255)
         }
         local result = ""
-        for i = 1, #str do
-            local col = colors[(i-1)%#colors+1]
+        local index = 0
+        for _, codepoint in utf8.codes(str) do
+            local char = utf8.char(codepoint)
+            local col = colors[(index % #colors) + 1]
             result = result .. string.format('<font color="rgb(%d,%d,%d)">%s</font>', 
-                math.floor(col.R*255), math.floor(col.G*255), math.floor(col.B*255), str:sub(i,i))
+                math.floor(col.R * 255), math.floor(col.G * 255), math.floor(col.B * 255), char)
+            index = index + 1
         end
         return result
     end
